@@ -13,6 +13,8 @@ var movingInReverse = false;
 
 const PLAYER_MOVEMENT_SPEED = 6;
 const PLAYER_ROTATION_SPEED = 1.7;
+const DUST_TO_SPAWN = 10000;
+const DUST_SIZE = 6;
 
 /*******************************************************/
 // setup()
@@ -39,7 +41,7 @@ function setup() {
 	wallBot = new Sprite(width/2, height-1, width, 1, 'k');
 	wallBot.color = 'black';
 
-	//spawnDust(10);
+	spawnDust(DUST_TO_SPAWN);
 }
 
 
@@ -86,6 +88,8 @@ function draw() {
 		player.direction = playerDirection;
 		movingInReverse = false;
 	};
+
+	console.log(frameRate());
 }
 
 
@@ -94,13 +98,22 @@ function draw() {
 /*******************************************************/
 function spawnDust(dustToSpawn) {
 	dustGroup = new Group();
-	dustGroup.collides(iceBall, removeAlien);
+	//dustGroup.collides(player, removeDust);
 
 	for (i = 0; i < dustToSpawn; i++) {
-		dust = new Sprite(random(2, width), random(2, height), 4, 4);
-        dust.color = random(['#633a0e', '#855624', '#2e1a05']);
+		dust = new Sprite(random(10, width-10), random(10, height-10), DUST_SIZE, DUST_SIZE, 'n');
+        //dust.color = random(['#633a0e', '#855624', '#2e1a05']);
+		dust.color = 'black';
 		dustGroup.add(dust);
 	}
+}
+
+
+/*******************************************************/
+// removeDust()
+/*******************************************************/
+function removeDust(dustCollidedWith) {
+	dustCollidedWith.remove();
 }
 
 
