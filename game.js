@@ -13,16 +13,21 @@ var movingInReverse = false;
 
 const PLAYER_MOVEMENT_SPEED = 6;
 const PLAYER_ROTATION_SPEED = 1.7;
-const DUST_TO_SPAWN = 10000;
+const DUST_TO_SPAWN = 1000;
 const DUST_SIZE = 6;
 
 /*******************************************************/
 // setup()
 /*******************************************************/
 function setup() {
+	// Debug
+	p5play.renderStats = true;
+	//world.velocityIterations = 40;
+	//world.positionIterations = 40;
+
 	// Canvas
 	cnv = createCanvas(windowWidth -4,  windowHeight -4);
-	cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
+	//cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
 
 	//Player
 	player = new Sprite(width/2, height/2, 120, 60);
@@ -49,6 +54,8 @@ function setup() {
 // draw()
 /*******************************************************/
 function draw() {
+	world.velocityIterations = 1;
+	world.positionIterations = 1;
 	background('lightgrey'); 
 
 	if (kb.pressing('left')) {
@@ -88,8 +95,6 @@ function draw() {
 		player.direction = playerDirection;
 		movingInReverse = false;
 	};
-
-	console.log(frameRate());
 }
 
 
