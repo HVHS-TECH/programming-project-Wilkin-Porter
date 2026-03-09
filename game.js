@@ -13,7 +13,7 @@ var movingInReverse = false;
 
 const PLAYER_MOVEMENT_SPEED = 6;
 const PLAYER_ROTATION_SPEED = 1.7;
-const DUST_TO_SPAWN = 1000;
+const DUST_TO_SPAWN = 5000;
 const DUST_SIZE = 6;
 
 /*******************************************************/
@@ -22,8 +22,8 @@ const DUST_SIZE = 6;
 function setup() {
 	// Debug
 	p5play.renderStats = true;
-	//world.velocityIterations = 40;
-	//world.positionIterations = 40;
+	//world.velocityIterations = 2;
+	//world.positionIterations = 1;
 
 	// Canvas
 	cnv = createCanvas(windowWidth -4,  windowHeight -4);
