@@ -11,9 +11,12 @@
 var playerDirection = 270;
 var movingInReverse = false;
 
+var player;
+var dustGroup;
+
 const PLAYER_MOVEMENT_SPEED = 6;
 const PLAYER_ROTATION_SPEED = 1.7;
-const DUST_TO_SPAWN = 5000;
+const DUST_TO_SPAWN = 1040;
 const DUST_SIZE = 6;
 
 /*******************************************************/
@@ -30,7 +33,7 @@ function setup() {
 	//cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
 
 	//Player
-	player = new Sprite(width/2, height/2, 120, 60);
+	player = new Sprite(width/2, height/2, 120, 60, 'd');
 	player.color = 'cyan';
 	player.text = "Front >";
     player.textSize = 40;
@@ -54,9 +57,8 @@ function setup() {
 // draw()
 /*******************************************************/
 function draw() {
-	world.velocityIterations = 1;
-	world.positionIterations = 1;
 	background('lightgrey'); 
+
 
 	if (kb.pressing('left')) {
 		if (movingInReverse == false) {
@@ -103,22 +105,23 @@ function draw() {
 /*******************************************************/
 function spawnDust(dustToSpawn) {
 	dustGroup = new Group();
-	//dustGroup.collides(player, removeDust);
+	dustGroup.collides(player, removeDust);
 
 	for (i = 0; i < dustToSpawn; i++) {
-		dust = new Sprite(random(10, width-10), random(10, height-10), DUST_SIZE, DUST_SIZE, 'n');
-        //dust.color = random(['#633a0e', '#855624', '#2e1a05']);
-		dust.color = 'black';
+		dust = new Sprite(random(10, width-10), random(10, height-10), DUST_SIZE, DUST_SIZE, 'k');
+        dust.color = random(['#633a0e', '#855624', '#2e1a05']);
 		dustGroup.add(dust);
 	}
 }
 
+console.log("collided sehfshfkuhws dust")
 
 /*******************************************************/
 // removeDust()
 /*******************************************************/
 function removeDust(dustCollidedWith) {
-	dustCollidedWith.remove();
+	dustCollidedWith.remove(); 
+	//console.log("collided with dust")
 }
 
 
