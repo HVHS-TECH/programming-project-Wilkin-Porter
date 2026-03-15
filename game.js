@@ -17,8 +17,11 @@ const DUST_SIZE = 6;
 const WALL_DUST_SPAWNING_OFFSET = 6;
 const REMOVAL_RADIUS = 60;
 const REMOVAL_DISTANCE_FROM_PLAYER = 120;
+const TEXT_REMOVE_ZONE_X = 260;
+const TEXT_REMOVE_ZONE_Y = 100;
 
-const dustArray = []
+
+const dustArray = [];
 
 var playerDirection = 270;
 var movingInReverse = false;
@@ -26,6 +29,7 @@ var timer = 0;
 
 var player;
 var dustGroup;
+var textBackground;
 
 
 /*******************************************************/
@@ -45,16 +49,22 @@ function setup() {
 	player.text = "Front >";
     player.textSize = 40;
     player.textColor = 'white';
+	player.rotation = playerDirection;
+	player.direction = playerDirection;
 
 	// Collision Walls
-	wallLH  = new Sprite(1, height/2, 1, height, 'k');
+	wallLH = new Sprite(1, height/2, 1, height, 'k');
 	wallLH.color = 'black';
-	wallRH  = new Sprite(width-1, height/2, 1, height, 'k');
+	wallRH = new Sprite(width-1, height/2, 1, height, 'k');
 	wallRH.color = 'black';
 	wallTop = new Sprite(width/2, 1, width, 1, 'k');
 	wallTop.color = 'black';
 	wallBot = new Sprite(width/2, height-1, width, 1, 'k');
 	wallBot.color = 'black';
+
+	// Text Background
+	textBackground = new Sprite(2+TEXT_REMOVE_ZONE_X/2, 2+TEXT_REMOVE_ZONE_Y/2, TEXT_REMOVE_ZONE_X, TEXT_REMOVE_ZONE_Y, 'k');
+	textBackground.color = 'white';
 
 	spawnDust(DUST_TO_SPAWN);
 }
@@ -68,6 +78,7 @@ function draw() {
 	
 	drawDust();
 	removeDust();
+	allSprites.draw()
 	displayTextAndTimer();
 	
 	
@@ -178,25 +189,23 @@ function calculateDustLeft() {
 // removeDust()
 /*******************************************************/
 function removeDust() {
-	/* for (var i = 0; i < dustArray.length; i++) {
-		if (
-			dustArray[i].xPos >= player.x - REMOVAL_RADIUS && 
-			dustArray[i].xPos <= player.x + REMOVAL_RADIUS && 
-			dustArray[i].yPos >= player.y - REMOVAL_RADIUS && 
-			dustArray[i].yPos <= player.y + REMOVAL_RADIUS 
-		){
-			dustArray[i].visible = false;
-		} 
-	} */
-
 	xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
 	yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
 
+	// Debug
+	noFill();
+	stroke('purple');
+	circle(xPosDustRemovalCircle, yPosDustRemovalCircle, REMOVAL_RADIUS*2); 
+	fill('black')
+	stroke('black');
 	//console.log('x pos' + xPosDustRemovalCircle + 'x pos player' + player.x)
 	//console.log('y pos' + yPosDustRemovalCircle + 'y pos player' + player.y)
 
 	for (var i = 0; i < dustArray.length; i++) {
 		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < (REMOVAL_RADIUS ** 2)) {
+			dustArray[i].visible = false;
+		}
+		if (dustArray[i].xPos < TEXT_REMOVE_ZONE_X && dustArray[i].yPos < TEXT_REMOVE_ZONE_Y) {
 			dustArray[i].visible = false;
 		}
 	}
@@ -211,7 +220,7 @@ function displayTextAndTimer() {
 		timer++;
 	}
 	textSize(30);
-	text("Dust Left " + calculateDustLeft() + "\nTime " + timer, 20, 40)
+	text("Dust Left: " + calculateDustLeft() + "\nTime: " + timer, 20, 40)
 }
 
 
