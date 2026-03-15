@@ -15,16 +15,15 @@ const PLAYER_ROTATION_SPEED = 1.7;
 const DUST_TO_SPAWN = 10000;
 const DUST_SIZE = 6;
 const WALL_DUST_SPAWNING_OFFSET = 6;
+const REMOVAL_RADIUS = 60;
 
 const dustArray = []
 
 var playerDirection = 270;
 var movingInReverse = false;
-var dustAmount = DUST_TO_SPAWN;
 
 var player;
 var dustGroup;
-var hitbox;
 
 
 /*******************************************************/
@@ -33,24 +32,17 @@ var hitbox;
 function setup() {
 	// Debug
 	p5play.renderStats = true;
-	//world.velocityIterations = 2;
-	//world.positionIterations = 1;
 
 	// Canvas
 	cnv = createCanvas(windowWidth -4,  windowHeight -4);
-	//cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
+	cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
 
 	//Player
-	player = new Sprite(width/2, height/2, 120, 60, 'k');
+	player = new Sprite(width/2, height/2, 120, 60, 'd');
 	player.color = 'cyan';
 	player.text = "Front >";
     player.textSize = 40;
     player.textColor = 'white';
-
-	// Hitbox
-	hitbox = new Sprite(width/2, height/2, 120, 60, 'k');
-	hitbox.color = 'purple';
-
 
 	// Collision Walls
 	wallLH  = new Sprite(1, height/2, 1, height, 'k');
@@ -62,8 +54,7 @@ function setup() {
 	wallBot = new Sprite(width/2, height-1, width, 1, 'k');
 	wallBot.color = 'black';
 
-	//spawnDust(DUST_TO_SPAWN);
-	spawnDustArray(DUST_TO_SPAWN);
+	spawnDust(DUST_TO_SPAWN);
 }
 
 
@@ -73,6 +64,8 @@ function setup() {
 function draw() {
 	background('lightgrey'); 
 	drawDust();
+	//console.log(calculateDustLeft());
+	console.log(player.rotation);
 
 	if (kb.pressing('left')) {
 		if (movingInReverse == false) {
@@ -109,42 +102,36 @@ function draw() {
 		movingInReverse = false;
 	};
 
-	// Update the hitbox position
-	hitbox.x = player.x;
-	hitbox.y = player.y;
-	hitbox.rotation = playerDirection + 90;
-}
-
-
-/*******************************************************/
-// spawnDust()
-/*******************************************************/
-function spawnDust(dustToSpawn) {
-	dustGroup = new Group();
-
-	// Collisions
-	//dustGroup.overlaps(hitbox, moveDust);
-
-
-	for (i = 0; i < dustToSpawn; i++) {
-		dust = new Sprite(random(10, width-10), random(10, height-10), DUST_SIZE, DUST_SIZE, 'k');
-        dust.color = random(['#633a0e', '#855624', '#2e1a05']);
-		dustGroup.add(dust);
-	}
+	removeDust();
 }
 
 
 /*******************************************************/
 // spawnDustArray()
 /*******************************************************/
-function spawnDustArray(dustToSpawn) {
-	for (i = 0; i < dustToSpawn; i++) {
+function spawnDust(dustToSpawn) {
+	for (var i = 0; i < dustToSpawn; i++) {
 		dustArray.push({
 			xPos: random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET), 
 			yPos: random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET), 
-			color: random(['#633a0e', '#855624', '#2e1a05'])
+			color: random(['#633a0e', '#855624', '#2e1a05']),
+			visible: true
 		});
 	}
+
+	removeDust();
+	
+	while (calculateDustLeft() < DUST_TO_SPAWN) {
+		for (var i = 0; i < dustArray.length; i++) {
+			if (dustArray[i].visible == false) {
+				dustArray[i].xPos = random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET);
+				dustArray[i].yPos = random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET);
+				dustArray[i].visible = true;
+			} 
+		}
+		removeDust();
+	}
+	
 }
 
 
@@ -152,10 +139,12 @@ function spawnDustArray(dustToSpawn) {
 // drawDust()
 /*******************************************************/
 function drawDust() {
-	for (var dust of dustArray) {
-		stroke(dust.color);
-		strokeWeight(DUST_SIZE);
-		point(dust.xPos, dust.yPos);
+	for (var i = 0; i < dustArray.length; i++) {
+		if (dustArray[i].visible == true) {
+			stroke(dustArray[i].color);
+			strokeWeight(DUST_SIZE);
+			point(dustArray[i].xPos, dustArray[i].yPos);
+		}
 	}
 
 	// Reset stroke size and colour
@@ -165,24 +154,34 @@ function drawDust() {
 
 
 /*******************************************************/
-// moveDust()
+// drawDust()
 /*******************************************************/
-function moveDust(dustOverlapping) {
-	dustOverlapping.moveTowards(hitbox, 0.05); 
-	console.log('collidiong awefasfhakfda');
-	/*if (dustGroup.overlaps(player)) {
-		removeDust;
-	} */
+function calculateDustLeft() {
+	var dustLeft = 0;
+	for (var i = 0; i < dustArray.length; i++) {
+		if (dustArray[i].visible == true) {
+			dustLeft++;
+		}
+	}
+
+	return dustLeft;
 }
 
 
 /*******************************************************/
 // removeDust()
 /*******************************************************/
-/*function removeDust(dustoverlapping) {
-	dustOverlapping.moveTowards(hitbox); 
-	dustAmount--;
-	console.log(dustAmount);
+function removeDust() {
+	for (var i = 0; i < dustArray.length; i++) {
+		if (
+			dustArray[i].xPos >= player.x - REMOVAL_RADIUS && 
+			dustArray[i].xPos <= player.x + REMOVAL_RADIUS && 
+			dustArray[i].yPos >= player.y - REMOVAL_RADIUS && 
+			dustArray[i].yPos <= player.y + REMOVAL_RADIUS 
+		){
+			dustArray[i].visible = false;
+		} 
+	}
 }
 
 
