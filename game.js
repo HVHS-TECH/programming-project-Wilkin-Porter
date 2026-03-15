@@ -22,6 +22,7 @@ const dustArray = []
 
 var playerDirection = 270;
 var movingInReverse = false;
+var timer = 0;
 
 var player;
 var dustGroup;
@@ -32,7 +33,7 @@ var dustGroup;
 /*******************************************************/
 function setup() {
 	// Debug
-	p5play.renderStats = true;
+	//p5play.renderStats = true;
 
 	// Canvas
 	cnv = createCanvas(windowWidth -4,  windowHeight -4);
@@ -64,7 +65,13 @@ function setup() {
 /*******************************************************/
 function draw() {
 	background('lightgrey'); 
+	
 	drawDust();
+	removeDust();
+	displayTextAndTimer();
+	
+	
+	// Debug
 	//console.log(calculateDustLeft());
 	//console.log(player.rotation);
 
@@ -102,8 +109,6 @@ function draw() {
 		player.speed = 0;
 		movingInReverse = false;
 	};
-
-	removeDust();
 }
 
 
@@ -187,15 +192,26 @@ function removeDust() {
 	xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
 	yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
 
-	console.log('x pos' + xPosDustRemovalCircle + 'x pos player' + player.x)
+	//console.log('x pos' + xPosDustRemovalCircle + 'x pos player' + player.x)
 	//console.log('y pos' + yPosDustRemovalCircle + 'y pos player' + player.y)
 
 	for (var i = 0; i < dustArray.length; i++) {
 		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < (REMOVAL_RADIUS ** 2)) {
-			//console.log('ajnhfaif');
 			dustArray[i].visible = false;
 		}
 	}
+}
+
+
+/*******************************************************/
+// displayTextAndTimer()
+/*******************************************************/
+function displayTextAndTimer() {
+	if (calculateDustLeft() !== 0 && frameCount % 60 == 0) {
+		timer++;
+	}
+	textSize(30);
+	text("Dust Left " + calculateDustLeft() + "\nTime " + timer, 20, 40)
 }
 
 

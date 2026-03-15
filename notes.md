@@ -1,6 +1,6 @@
 Features to add:
 
-Hitbox
+Hitbox ✅
 Score
 Player acceleration
-array for dust particles?
+array for dust particles? ✅
