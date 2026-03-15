@@ -16,6 +16,7 @@ const DUST_TO_SPAWN = 10000;
 const DUST_SIZE = 6;
 const WALL_DUST_SPAWNING_OFFSET = 6;
 const REMOVAL_RADIUS = 60;
+const REMOVAL_DISTANCE_FROM_PLAYER = 120;
 
 const dustArray = []
 
@@ -65,7 +66,7 @@ function draw() {
 	background('lightgrey'); 
 	drawDust();
 	//console.log(calculateDustLeft());
-	console.log(player.rotation);
+	//console.log(player.rotation);
 
 	if (kb.pressing('left')) {
 		if (movingInReverse == false) {
@@ -172,7 +173,7 @@ function calculateDustLeft() {
 // removeDust()
 /*******************************************************/
 function removeDust() {
-	for (var i = 0; i < dustArray.length; i++) {
+	/* for (var i = 0; i < dustArray.length; i++) {
 		if (
 			dustArray[i].xPos >= player.x - REMOVAL_RADIUS && 
 			dustArray[i].xPos <= player.x + REMOVAL_RADIUS && 
@@ -181,6 +182,19 @@ function removeDust() {
 		){
 			dustArray[i].visible = false;
 		} 
+	} */
+
+	xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
+	yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
+
+	console.log('x pos' + xPosDustRemovalCircle + 'x pos player' + player.x)
+	//console.log('y pos' + yPosDustRemovalCircle + 'y pos player' + player.y)
+
+	for (var i = 0; i < dustArray.length; i++) {
+		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < (REMOVAL_RADIUS ** 2)) {
+			//console.log('ajnhfaif');
+			dustArray[i].visible = false;
+		}
 	}
 }
 
