@@ -2,16 +2,19 @@
 // P5.play: game.js
 // Vacuuming Simulator Main Script
 // Written by Wilkin Porter - Term 1 2026
+// I'm writing 'color' in the code but 'colour' in comments
 /*******************************************************/
 
+
 /*******************************************************/
-// Global Variables + Constants
+// Global Variables, Constants and Arrays
 /*******************************************************/
 
 const PLAYER_MOVEMENT_SPEED = 6;
 const PLAYER_ROTATION_SPEED = 1.7;
-const DUST_TO_SPAWN = 1000;
+const DUST_TO_SPAWN = 10000;
 const DUST_SIZE = 6;
+const WALL_DUST_SPAWNING_OFFSET = 6;
 
 const dustArray = []
 
@@ -24,13 +27,12 @@ var dustGroup;
 var hitbox;
 
 
-
 /*******************************************************/
 // setup()
 /*******************************************************/
 function setup() {
 	// Debug
-	//p5play.renderStats = true;
+	p5play.renderStats = true;
 	//world.velocityIterations = 2;
 	//world.positionIterations = 1;
 
@@ -60,7 +62,8 @@ function setup() {
 	wallBot = new Sprite(width/2, height-1, width, 1, 'k');
 	wallBot.color = 'black';
 
-	spawnDust(DUST_TO_SPAWN);
+	//spawnDust(DUST_TO_SPAWN);
+	spawnDustArray(DUST_TO_SPAWN);
 }
 
 
@@ -69,6 +72,7 @@ function setup() {
 /*******************************************************/
 function draw() {
 	background('lightgrey'); 
+	drawDust();
 
 	if (kb.pressing('left')) {
 		if (movingInReverse == false) {
@@ -85,6 +89,7 @@ function draw() {
 		}
 	};
 	
+	// Update the player rotation
 	player.rotation = playerDirection;
 	player.direction = playerDirection;
 
@@ -98,13 +103,9 @@ function draw() {
 
 	if (kb.released('up')) {    
 		player.speed = 0;
-		player.rotation = playerDirection;
-		player.direction = playerDirection;
 	};
 	if (kb.released('down')) {    
 		player.speed = 0;
-		player.rotation = playerDirection;
-		player.direction = playerDirection;
 		movingInReverse = false;
 	};
 
@@ -112,14 +113,6 @@ function draw() {
 	hitbox.x = player.x;
 	hitbox.y = player.y;
 	hitbox.rotation = playerDirection + 90;
-
-	if (dustGroup.overlaps(hitbox)) {
-		moveDust();
-	}
-	// Check Collisions
-	/*if (dustGroup.overlaps(hitbox) && dustGroup.overlaps(player)) {
-		removeDust;
-	}  */
 }
 
 
@@ -138,6 +131,36 @@ function spawnDust(dustToSpawn) {
         dust.color = random(['#633a0e', '#855624', '#2e1a05']);
 		dustGroup.add(dust);
 	}
+}
+
+
+/*******************************************************/
+// spawnDustArray()
+/*******************************************************/
+function spawnDustArray(dustToSpawn) {
+	for (i = 0; i < dustToSpawn; i++) {
+		dustArray.push({
+			xPos: random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET), 
+			yPos: random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET), 
+			color: random(['#633a0e', '#855624', '#2e1a05'])
+		});
+	}
+}
+
+
+/*******************************************************/
+// drawDust()
+/*******************************************************/
+function drawDust() {
+	for (var dust of dustArray) {
+		stroke(dust.color);
+		strokeWeight(DUST_SIZE);
+		point(dust.xPos, dust.yPos);
+	}
+
+	// Reset stroke size and colour
+	stroke('black');
+	strokeWeight(1);
 }
 
 
