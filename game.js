@@ -20,28 +20,36 @@ const REMOVAL_DISTANCE_FROM_PLAYER = 120;
 const TEXT_REMOVE_ZONE_X = 260;
 const TEXT_REMOVE_ZONE_Y = 100;
 
-
 const dustArray = [];
 
 var playerDirection = 270;
 var movingInReverse = false;
 var timer = 0;
+var timerSecs = 0;
+var timerMins = 0;
+var gameMode = 'time';
 
 var player;
 var dustGroup;
 var textBackground;
+var timeTrialStartButton;
 
 
 /*******************************************************/
 // setup()
 /*******************************************************/
 function setup() {
+	console.log('setup');
 	// Debug
 	//p5play.renderStats = true;
 
 	// Canvas
 	cnv = createCanvas(windowWidth -4,  windowHeight -4);
 	cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
+
+	timeTrialStartButton = createButton('click me');
+  	timeTrialStartButton.position(width/2, height/2);
+  	timeTrialStartButton.mousePressed(timeTrialStart);
 
 	//Player
 	player = new Sprite(width/2, height/2, 120, 60, 'd');
@@ -78,7 +86,7 @@ function draw() {
 	
 	drawDust();
 	removeDust();
-	allSprites.draw()
+	allSprites.draw();
 	displayTextAndTimer();
 	
 	
@@ -218,9 +226,25 @@ function removeDust() {
 function displayTextAndTimer() {
 	if (calculateDustLeft() !== 0 && frameCount % 60 == 0) {
 		timer++;
+		timerSecs = timer % 60;
+		timerMins = Math.trunc(timer / 60);
 	}
 	textSize(30);
-	text("Dust Left: " + calculateDustLeft() + "\nTime: " + timer, 20, 40)
+
+	if (timerMins < 1) {
+		text("Dust Left: " + calculateDustLeft() + "\nTime: " + timerSecs + 's', 20, 40)
+	} else {
+		text("Dust Left: " + calculateDustLeft() + "\nTime: " + timerMins + 'm ' + timerSecs + 's', 20, 40)
+	}
+	
+}
+
+
+/*******************************************************/
+// timeTrialStart()
+/*******************************************************/
+function timeTrialStart() {
+	console.log('time trial start');
 }
 
 

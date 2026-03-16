@@ -1,6 +1,7 @@
 Features to add:
 
+
 Hitbox ✅
-Score
+Score ✅
 Player acceleration
 array for dust particles? ✅
