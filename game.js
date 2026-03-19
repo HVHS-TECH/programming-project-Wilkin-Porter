@@ -137,11 +137,6 @@ function draw() {
 		removeDust();
 		allSprites.draw();
 		displayText('both'); // Pass 'dust' for dust remaining only and pass 'both' for both dust and the timer 
-
-		if (calculateDustLeft() == 0) {
-			dustArray.length = 0;
-			spawnDust(DUST_TO_SPAWN);
-		}
 	}
 
 	if (gameMode == 'freeRoam') {
