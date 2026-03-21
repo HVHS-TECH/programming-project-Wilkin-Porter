@@ -7,10 +7,10 @@ Player acceleration
 array for dust particles? ✅
 
 Next: 
-1. End screen
-2. Remove dust gamemode optimisation (only update score box collision when initialising == true)
-3. Art
-4. Optimise 
+1. Art
+1. Optimise 
+3. Make sizes properly dynamic
+4. Controls screen
 
 Optimisation order: 
 a. rewrite the calculateDustLeft() function, and make it only have to be called once per frame and keep the output variable
