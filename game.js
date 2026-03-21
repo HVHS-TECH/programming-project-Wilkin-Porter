@@ -35,7 +35,7 @@ var dustGroup;
 var textBackground;
 var timeTrialStartButton;
 var freeRoamStartButton;
-var titleScreenGroup;
+var userInterfaceGroup;
 var wallsGroup;
 
 
@@ -46,35 +46,52 @@ function setup() {
 	// Debug
 	//p5play.renderStats = true;
 
+	// Best Time Setup
+	if (localStorage.getItem('bestTimeTimer') == null) {
+		localStorage.setItem('bestTimeMins', 5);
+		localStorage.setItem('bestTimeSecs', 0);
+		localStorage.setItem('bestTimeTimer', 300);
+	}
+
 	// Canvas
 	cnv = createCanvas(windowWidth -4,  windowHeight -4);
 	cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
 
-	// Title Screen Group
-	titleScreenGroup = new Group();
+	// User Interface Group
+	userInterfaceGroup = new Group();
 
 	// Buttons
-	timeTrialStartButton = new Sprite(width/2, height/2-40, 400, 60, 'k');
+	timeTrialStartButton = new Sprite(width/2, height/2-40, 400, 60, 'kinematic');
 	timeTrialStartButton.color = '#1f8f28';
 	timeTrialStartButton.textSize = 30;
 	timeTrialStartButton.text = 'Start Time Trial';
-	titleScreenGroup.add(timeTrialStartButton);
+	userInterfaceGroup.add(timeTrialStartButton);
 
-	freeRoamStartButton = new Sprite(width/2, height/2+40, 400, 60, 'k');
+	freeRoamStartButton = new Sprite(width/2, height/2+40, 400, 60, 'kinematic');
 	freeRoamStartButton.color = '#2269ac';
 	freeRoamStartButton.textSize = 30;
 	freeRoamStartButton.text = 'Start Free Roam';
-	titleScreenGroup.add(freeRoamStartButton);
+	userInterfaceGroup.add(freeRoamStartButton);
 
 	// Title Text 
-	titleBox = new Sprite(width/2, height/4, 600, 100, 'k');
+	titleBox = new Sprite(width/2, height/4, 600, 100, 'kinematic');
 	titleBox.color = 'white';
 	titleBox.textSize = 50;
 	titleBox.text = 'Vacuuming Simulator';
-	titleScreenGroup.add(titleBox);
+	userInterfaceGroup.add(titleBox);
+
+	// In Game Score
+	textBackground = new Sprite(2+TEXT_REMOVE_ZONE_X/2, 2+TEXT_REMOVE_ZONE_Y/2, TEXT_REMOVE_ZONE_X, TEXT_REMOVE_ZONE_Y, 'kinematic');
+	textBackground.color = 'white';
+	textBackground.visible = false;
+
+	// Post Game Score
+	scoreBox = new Sprite(width/2, height/2, 350, 200, 'none');
+	scoreBox.color = 'white';
+	scoreBox.visible = false;
 
 	// Player
-	player = new Sprite(width/2, height/2, 120, 60, 'd');
+	player = new Sprite(width/2, height/2, 120, 60, 'dynamic');
 	player.color = 'cyan';
 	player.text = "Front >";
     player.textSize = 40;
@@ -85,16 +102,16 @@ function setup() {
 
 	// Collision Walls
 	wallsGroup = new Group();
-	wallLH = new Sprite(1, height/2, 1, height, 'k');
+	wallLH = new Sprite(1, height/2, 1, height, 'kinematic');
 	wallLH.color = 'black';
 	wallsGroup.add(wallLH);
-	wallRH = new Sprite(width-1, height/2, 1, height, 'k');
+	wallRH = new Sprite(width-1, height/2, 1, height, 'kinematic');
 	wallRH.color = 'black';
 	wallsGroup.add(wallRH);
-	wallTop = new Sprite(width/2, 1, width, 1, 'k');
+	wallTop = new Sprite(width/2, 1, width, 1, 'kinematic');
 	wallTop.color = 'black';
 	wallsGroup.add(wallTop);
-	wallBot = new Sprite(width/2, height-1, width, 1, 'k');
+	wallBot = new Sprite(width/2, height-1, width, 1, 'kinematic');
 	wallBot.color = 'black';
 	wallsGroup.add(wallBot);
 	wallsGroup.visible = false;
@@ -107,28 +124,21 @@ function setup() {
 function draw() {
 	background('lightgrey'); 
 
-	if (gameMode == 'startScreen') {
-		if (timeTrialStartButton.mouse.presses('left')) {
-			gameMode = 'timeTrial';
-		}
-		if (freeRoamStartButton.mouse.presses('left')) {
-			gameMode = 'freeRoam';
-		}
-	}
-
 	if (gameMode == 'timeTrial') {
 		while (initialising == true) {
 			player.rotation = playerDirection;
 			player.direction = playerDirection;
 			spawnDust(DUST_TO_SPAWN);
 
-			textBackground = new Sprite(2+TEXT_REMOVE_ZONE_X/2, 2+TEXT_REMOVE_ZONE_Y/2, TEXT_REMOVE_ZONE_X, TEXT_REMOVE_ZONE_Y, 'k');
-			textBackground.color = 'white';
-
+			textBackground.y = 2+TEXT_REMOVE_ZONE_Y/2
+			textBackground.scale.y = 1;
+			
 			player.visible = true;
 			wallsGroup.visible = true;
-			titleScreenGroup.visible = false;
-			titleScreenGroup.collider = 'none';
+			userInterfaceGroup.visible = false;
+			userInterfaceGroup.collider = 'none';
+			scoreBox.visible = false;
+			textBackground.visible = true;
 			initialising = false;
 		}
 
@@ -137,6 +147,13 @@ function draw() {
 		removeDust();
 		allSprites.draw();
 		displayText('both'); // Pass 'dust' for dust remaining only and pass 'both' for both dust and the timer 
+
+		if (calculateDustLeft() == 0) {
+			initialising = true;
+			gameMode = 'endScreen';
+		}
+
+		return;
 	}
 
 	if (gameMode == 'freeRoam') {
@@ -145,13 +162,17 @@ function draw() {
 			player.direction = playerDirection;
 			spawnDust(DUST_TO_SPAWN);
 
-			textBackground = new Sprite(2+TEXT_REMOVE_ZONE_X/2, (2+TEXT_REMOVE_ZONE_Y/2)-15, TEXT_REMOVE_ZONE_X, TEXT_REMOVE_ZONE_Y-30, 'k');
-			textBackground.color = 'white';
+			//textBackground = new Sprite(2+TEXT_REMOVE_ZONE_X/2, (2+TEXT_REMOVE_ZONE_Y/2)-15, TEXT_REMOVE_ZONE_X, TEXT_REMOVE_ZONE_Y-30, 'k');
+			//textBackground.color = 'white';
+			textBackground.y = 2+TEXT_REMOVE_ZONE_Y/4
+			textBackground.scale.y = 0.5;
 
 			player.visible = true;
 			wallsGroup.visible = true;
-			titleScreenGroup.visible = false;
-			titleScreenGroup.collider = 'none';
+			userInterfaceGroup.visible = false;
+			userInterfaceGroup.collider = 'none';
+			scoreBox.visible = false;
+			textBackground.visible = true;
 			initialising = false;
 		}
 
@@ -164,6 +185,81 @@ function draw() {
 		if (calculateDustLeft() == 0) {
 			dustArray.length = 0;
 			spawnDust(DUST_TO_SPAWN);
+		}
+
+		return;
+	}
+	
+	if (gameMode == 'startScreen') {
+		if (timeTrialStartButton.mouse.presses('left')) {
+			initialising = true;
+			gameMode = 'timeTrial';
+		}
+
+		if (freeRoamStartButton.mouse.presses('left')) {
+			initialising = true;
+			gameMode = 'freeRoam';
+		}
+
+		return;
+	}
+
+	if (gameMode == 'endScreen') {
+		while (initialising == true) {
+			playerDirection = 270;
+			player.rotation = playerDirection;
+			player.direction = playerDirection;
+
+			timeTrialStartButton.y = height/1.3-40;
+			freeRoamStartButton.y = height/1.3+40;	
+
+			scoreBox.textSize = 30;
+			if (parseInt(localStorage.getItem('bestTimeTimer')) > timer) {
+				localStorage.setItem('bestTimeMins', timerMins);
+				localStorage.setItem('bestTimeSecs', timerSecs);
+				localStorage.setItem('bestTimeTimer', timer);
+			}
+
+			if (parseInt(localStorage.getItem('bestTimeMins')) < 1) {
+				if (timerMins < 1) {
+					scoreBox.text = 
+					'Your Time:\n' + timerSecs + 's' + 
+					'\nBest Time:\n' + localStorage.getItem('bestTimeSecs') + 's';
+				} else {
+					scoreBox.text = 
+					'Your Time:\n' + timerMins + 'm ' + timerSecs + 's' + 
+					'\nBest Time:\n' + localStorage.getItem('bestTimeSecs')  + 's';
+				}
+			} else {
+				if (timerMins < 1) {
+					scoreBox.text = 
+					'Your Time:\n' + timerSecs + 's' + 
+					'\nBest Time:\n' + localStorage.getItem('bestTimeMins') + 'm ' + localStorage.getItem('bestTimeSecs') + 's';
+				} else {
+					scoreBox.text = 
+					'Your Time:\n' + timerMins + 'm ' + timerSecs + 's' + 
+					'\nBest Time:\n' + localStorage.getItem('bestTimeMins') + 'm ' + localStorage.getItem('bestTimeSecs') + 's';
+				}
+			}
+			
+
+			player.visible = false;
+			wallsGroup.visible = false;
+			userInterfaceGroup.visible = true;
+			userInterfaceGroup.collider = 'kinematic';
+			scoreBox.visible = true;
+			textBackground.visible = false;
+			initialising = false;
+		}
+
+		if (timeTrialStartButton.mouse.presses('left')) {
+			initialising = true;
+			gameMode = 'timeTrial';
+		}
+
+		if (freeRoamStartButton.mouse.presses('left')) {
+			initialising = true;
+			gameMode = 'freeRoam';
 		}
 	}
 }
@@ -293,14 +389,14 @@ function removeDust() {
 			dustArray[i].visible = false;
 		}
 
-		if (gameMode == 'timeTrial') {
+		if (gameMode == 'timeTrial' && initialising == true) {
 			if (dustArray[i].xPos < TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET && dustArray[i].yPos < TEXT_REMOVE_ZONE_Y + WALL_DUST_SPAWNING_OFFSET) {
 				dustArray[i].visible = false;
 			}
 		}
 		
-		if (gameMode == 'freeRoam') {
-			if (dustArray[i].xPos < TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET && dustArray[i].yPos < TEXT_REMOVE_ZONE_Y - 30 + WALL_DUST_SPAWNING_OFFSET) {
+		if (gameMode == 'freeRoam' && initialising == true) {
+			if (dustArray[i].xPos < TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET && dustArray[i].yPos < TEXT_REMOVE_ZONE_Y/2 + WALL_DUST_SPAWNING_OFFSET) {
 				dustArray[i].visible = false;
 			}
 		}
