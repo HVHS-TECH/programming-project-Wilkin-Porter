@@ -2,7 +2,6 @@
 // P5.play: game.js
 // Vacuuming Simulator Main Script
 // Written by Wilkin Porter - Term 1 2026
-// I'm writing 'color' in the code but 'colour' in comments
 /*******************************************************/
 
 
@@ -425,8 +424,6 @@ function displayText(displayMode) {
 	} else {
 		textBackground.text = "Dust Left: " + calculateDustLeft(), 20, 40;
 	}
-	
-	
 }
 
 
