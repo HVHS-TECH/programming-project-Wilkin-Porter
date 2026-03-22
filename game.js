@@ -29,6 +29,7 @@ var timerSecs = 0;
 var timerMins = 0;
 var gameMode = 'startScreen';
 var initialising = true;
+var scale;
 
 var player;
 var dustGroup;
@@ -59,27 +60,33 @@ function setup() {
 	cnv = createCanvas(windowWidth -4,  windowHeight -4);
 	cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
 
+	// Scale
+	scale = width/1916; // 1916 is the regular width
+
 	// User Interface Group
 	userInterfaceGroup = new Group();
 
 	// Buttons
-	timeTrialStartButton = new Sprite(width/2, height/2-40, 400, 60, 'kinematic');
+	timeTrialStartButton = new Sprite(width/2, height/2-40, 400, 60, 'kinematic'); // Change these lines
 	timeTrialStartButton.color = '#1f8f28';
-	timeTrialStartButton.textSize = 30;
+	timeTrialStartButton.textSize = 30 * scale;
 	timeTrialStartButton.text = 'Start Time Trial';
+	timeTrialStartButton.scale = scale;
 	userInterfaceGroup.add(timeTrialStartButton);
 
 	freeRoamStartButton = new Sprite(width/2, height/2+40, 400, 60, 'kinematic');
 	freeRoamStartButton.color = '#2269ac';
-	freeRoamStartButton.textSize = 30;
+	freeRoamStartButton.textSize = 30 * scale;
 	freeRoamStartButton.text = 'Start Free Roam';
+	freeRoamStartButton.scale = scale;
 	userInterfaceGroup.add(freeRoamStartButton);
 
 	// Title Text 
 	titleBox = new Sprite(width/2, height/4, 600, 100, 'kinematic');
 	titleBox.color = 'white';
-	titleBox.textSize = 50;
+	titleBox.textSize = 50 * scale;
 	titleBox.text = 'Vacuuming Simulator';
+	titleBox.scale = scale;
 	userInterfaceGroup.add(titleBox);
 
 	// In Game Score
@@ -122,7 +129,7 @@ function setup() {
 
 /*****************************************************************************************************/
 // draw()
-// 
+// Runs every frame, calls every gamemode function 
 /*****************************************************************************************************/
 function draw() {
 	background('lightgrey'); 
