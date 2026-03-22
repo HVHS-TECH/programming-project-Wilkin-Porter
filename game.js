@@ -1,13 +1,13 @@
-/*******************************************************/
+/*****************************************************************************************************/
 // P5.play: game.js
 // Vacuuming Simulator Main Script
 // Written by Wilkin Porter - Term 1 2026
-/*******************************************************/
+/*****************************************************************************************************/
 
 
-/*******************************************************/
+/*****************************************************************************************************/
 // Global Variables, Constants and Arrays
-/*******************************************************/
+/*****************************************************************************************************/
 
 const PLAYER_MOVEMENT_SPEED = 6;
 const PLAYER_ROTATION_SPEED = 1.7;
@@ -23,6 +23,7 @@ const dustArray = [];
 
 var playerDirection = 270;
 var movingInReverse = false;
+var dustLeft = 0;
 var timer = 0;
 var timerSecs = 0;
 var timerMins = 0;
@@ -38,9 +39,11 @@ var userInterfaceGroup;
 var wallsGroup;
 
 
-/*******************************************************/
+/*****************************************************************************************************/
 // setup()
-/*******************************************************/
+// Initialises things such as sprites, also supplimented by the initialisation section in 
+// each gamemode's function
+/*****************************************************************************************************/
 function setup() {
 	// Debug
 	//p5play.renderStats = true;
@@ -117,156 +120,40 @@ function setup() {
 }
 
 
-/*******************************************************/
+/*****************************************************************************************************/
 // draw()
-/*******************************************************/
+// 
+/*****************************************************************************************************/
 function draw() {
 	background('lightgrey'); 
 
 	if (gameMode == 'timeTrial') {
-		while (initialising == true) {
-			player.rotation = playerDirection;
-			player.direction = playerDirection;
-			spawnDust(DUST_TO_SPAWN);
-
-			textBackground.y = 2+TEXT_REMOVE_ZONE_Y/2
-			textBackground.scale.y = 1;
-			
-			player.visible = true;
-			wallsGroup.visible = true;
-			userInterfaceGroup.visible = false;
-			userInterfaceGroup.collider = 'none';
-			scoreBox.visible = false;
-			textBackground.visible = true;
-			initialising = false;
-		}
-
-		handleInput();
-		drawDust();
-		removeDust();
-		allSprites.draw();
-		displayText('both'); // Pass 'dust' for dust remaining only and pass 'both' for both dust and the timer 
-
-		if (calculateDustLeft() == 0) {
-			initialising = true;
-			gameMode = 'endScreen';
-		}
-
+		timeTrial();
 		return;
 	}
 
 	if (gameMode == 'freeRoam') {
-		while (initialising == true) {
-			player.rotation = playerDirection;
-			player.direction = playerDirection;
-			spawnDust(DUST_TO_SPAWN);
-
-			//textBackground = new Sprite(2+TEXT_REMOVE_ZONE_X/2, (2+TEXT_REMOVE_ZONE_Y/2)-15, TEXT_REMOVE_ZONE_X, TEXT_REMOVE_ZONE_Y-30, 'k');
-			//textBackground.color = 'white';
-			textBackground.y = 2+TEXT_REMOVE_ZONE_Y/4
-			textBackground.scale.y = 0.5;
-
-			player.visible = true;
-			wallsGroup.visible = true;
-			userInterfaceGroup.visible = false;
-			userInterfaceGroup.collider = 'none';
-			scoreBox.visible = false;
-			textBackground.visible = true;
-			initialising = false;
-		}
-
-		handleInput();
-		drawDust();
-		removeDust();
-		allSprites.draw();
-		displayText('dust'); // Pass 'dust' for dust remaining only and pass 'both' for both dust and the timer 
-
-		if (calculateDustLeft() == 0) {
-			dustArray.length = 0;
-			spawnDust(DUST_TO_SPAWN);
-		}
-
+		freeRoam();
 		return;
 	}
 	
 	if (gameMode == 'startScreen') {
-		if (timeTrialStartButton.mouse.presses('left')) {
-			initialising = true;
-			gameMode = 'timeTrial';
-		}
-
-		if (freeRoamStartButton.mouse.presses('left')) {
-			initialising = true;
-			gameMode = 'freeRoam';
-		}
-
+		startScreen();
 		return;
 	}
 
 	if (gameMode == 'endScreen') {
-		while (initialising == true) {
-			playerDirection = 270;
-			player.rotation = playerDirection;
-			player.direction = playerDirection;
-
-			timeTrialStartButton.y = height/1.3-40;
-			freeRoamStartButton.y = height/1.3+40;	
-
-			scoreBox.textSize = 30;
-			if (parseInt(localStorage.getItem('bestTimeTimer')) > timer) {
-				localStorage.setItem('bestTimeMins', timerMins);
-				localStorage.setItem('bestTimeSecs', timerSecs);
-				localStorage.setItem('bestTimeTimer', timer);
-			}
-
-			if (parseInt(localStorage.getItem('bestTimeMins')) < 1) {
-				if (timerMins < 1) {
-					scoreBox.text = 
-					'Your Time:\n' + timerSecs + 's' + 
-					'\nBest Time:\n' + localStorage.getItem('bestTimeSecs') + 's';
-				} else {
-					scoreBox.text = 
-					'Your Time:\n' + timerMins + 'm ' + timerSecs + 's' + 
-					'\nBest Time:\n' + localStorage.getItem('bestTimeSecs')  + 's';
-				}
-			} else {
-				if (timerMins < 1) {
-					scoreBox.text = 
-					'Your Time:\n' + timerSecs + 's' + 
-					'\nBest Time:\n' + localStorage.getItem('bestTimeMins') + 'm ' + localStorage.getItem('bestTimeSecs') + 's';
-				} else {
-					scoreBox.text = 
-					'Your Time:\n' + timerMins + 'm ' + timerSecs + 's' + 
-					'\nBest Time:\n' + localStorage.getItem('bestTimeMins') + 'm ' + localStorage.getItem('bestTimeSecs') + 's';
-				}
-			}
-			
-
-			player.visible = false;
-			wallsGroup.visible = false;
-			userInterfaceGroup.visible = true;
-			userInterfaceGroup.collider = 'kinematic';
-			scoreBox.visible = true;
-			textBackground.visible = false;
-			initialising = false;
-		}
-
-		if (timeTrialStartButton.mouse.presses('left')) {
-			initialising = true;
-			gameMode = 'timeTrial';
-		}
-
-		if (freeRoamStartButton.mouse.presses('left')) {
-			initialising = true;
-			gameMode = 'freeRoam';
-		}
+		endScreen();
+		return;
 	}
 }
 
 
-/*******************************************************/
+/*****************************************************************************************************/
 // handleInput()
-/*******************************************************/
+// Called by timeTrial() and freeRoam()
+// Handles the keyboard inputs and changes the movement and rotation of the player sprite
+/*****************************************************************************************************/
 function handleInput() {
 	if (kb.pressing('left')) {
 		if (movingInReverse == false) {
@@ -305,9 +192,14 @@ function handleInput() {
 }
 
 
-/*******************************************************/
-// spawnDustArray()
-/*******************************************************/
+/*****************************************************************************************************/
+// spawnDust()
+// Parameter 1: How many particles to create / add to the array
+// Called by timeTrial() and freeRoam()
+// Adds (parameter 1) pieces of dust with a random position and colour to the dustArray, then calls 
+// removeDust(), and if any dust is not visible it chooses a new random position for those pieces of 
+// dust, it continues doing that until all dust are visible
+/*****************************************************************************************************/
 function spawnDust(dustToSpawn) {
 	for (var i = 0; i < dustToSpawn; i++) {
 		dustArray.push({
@@ -330,13 +222,15 @@ function spawnDust(dustToSpawn) {
 		}
 		removeDust();
 	}
-	
 }
 
 
-/*******************************************************/
+/*****************************************************************************************************/
 // drawDust()
-/*******************************************************/
+// Called by timeTrial() and freeRoam()
+// Goes through the array, and for any pieces of dust that are visible, it draws a point with that 
+// dust's colour at it's x and y position
+/*****************************************************************************************************/
 function drawDust() {
 	for (var i = 0; i < dustArray.length; i++) {
 		if (dustArray[i].visible == true) {
@@ -352,24 +246,17 @@ function drawDust() {
 }
 
 
-/*******************************************************/
-// drawDust()
-/*******************************************************/
-function calculateDustLeft() {
-	var dustLeft = 0;
-	for (var i = 0; i < dustArray.length; i++) {
-		if (dustArray[i].visible == true) {
-			dustLeft++;
-		}
-	}
-
-	return dustLeft;
-}
-
-
-/*******************************************************/
+/*****************************************************************************************************/
 // removeDust()
-/*******************************************************/
+// Called by timeTrial() and freeRoam()
+// Uses sine and cosine to find the x and y position of a point ahead of the player, then it uses
+// pythagoras to find the distance from the x and y position of each piece of dust in the array to the
+// x and y position of the point ahead of the player, if the distance is shorter than REMOVAL_RADIUS,
+// then it sets that piece of dusts visible parameter to false (this essentially creates a removal 
+// circle ahead of the player)
+// It also checks if dust is behind the timer display and if it is then it sets that dusts visible
+// parameter to false
+/*****************************************************************************************************/
 function removeDust() {
 	xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
 	yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
@@ -403,13 +290,43 @@ function removeDust() {
 }
 
 
-/*******************************************************/
-// displayTextAndTimer()
-/*******************************************************/
+/*****************************************************************************************************/
+// calculateDustLeft()
+// Called by spawnDust(), timeTrial(), and freeRoam()
+// Goes through the array and for every piece of dust that is visible it increments a counter
+// It outputs a variable called dustLeft and also returns the counter
+/*****************************************************************************************************/
+function calculateDustLeft() {
+	var dustLeftTemporary = 0;
+	for (var i = 0; i < dustArray.length; i++) {
+		if (dustArray[i].visible == true) {
+			dustLeftTemporary++;
+		}
+	}
+
+	// Sets dustLeft to the amount of dust particles drawn, 
+	// so that this function only has to be called once per frame, improving performance
+	dustLeft = dustLeftTemporary; 
+
+	// Returns the amount of dust particles drawn for places where 
+	// this function isn't called before dustLeft is needed
+	return dustLeftTemporary;
+}
+
+
+/*****************************************************************************************************/
+// displayText()
+// Parameter 1: pass 'both' to display a timer and the dust remaining, 
+// and anything else to display only the dust
+// Called by timeTrial() and freeRoam()
+// If there is more than 0 dust left, then it counts total time in seconds (timer) counts seconds up to 
+// 59 (timerSecs) before rolling over to minutes (timerMins). It displays timerSecs and timerMins on 
+// the 'textBackground' sprite
+/*****************************************************************************************************/
 function displayText(displayMode) {
 	textBackground.textSize = 30;
 
-	if (calculateDustLeft() !== 0 && frameCount % 60 == 0) {
+	if (dustLeft !== 0 && frameCount % 60 == 0) {
 		timer++;
 		timerSecs = timer % 60;
 		timerMins = Math.trunc(timer / 60);
@@ -417,16 +334,203 @@ function displayText(displayMode) {
 
 	if (displayMode == 'both') {
 		if (timerMins < 1) {
-			textBackground.text = "Dust Left: " + calculateDustLeft() + "\nTime: " + timerSecs + 's', 20, 40;
+			textBackground.text = "Dust Left: " + dustLeft + "\nTime: " + timerSecs + 's', 20, 40;
 		} else {
-			textBackground.text = "Dust Left: " + calculateDustLeft() + "\nTime: " + timerMins + 'm ' + timerSecs + 's', 20, 40;
+			textBackground.text = "Dust Left: " + dustLeft + "\nTime: " + timerMins + 'm ' + timerSecs + 's', 20, 40;
 		}
 	} else {
-		textBackground.text = "Dust Left: " + calculateDustLeft(), 20, 40;
+		textBackground.text = "Dust Left: " + dustLeft, 20, 40;
 	}
 }
 
 
-/*******************************************************/
-//  END OF APP
-/*******************************************************/
+/*****************************************************************************************************/
+// updateScoreBoxText()
+// Called by endScreen()
+// Displays the local best time and the current game time on the end screen, then if the current game 
+// time is faster than the local time, it updates the local time to be the current game time. 
+/*****************************************************************************************************/
+function updateScoreBoxText() {
+	scoreBox.textSize = 30;
+	if (parseInt(localStorage.getItem('bestTimeTimer')) > timer) {
+		localStorage.setItem('bestTimeMins', timerMins);
+		localStorage.setItem('bestTimeSecs', timerSecs);
+		localStorage.setItem('bestTimeTimer', timer);
+	}
+
+	if (parseInt(localStorage.getItem('bestTimeMins')) < 1) {
+		if (timerMins < 1) {
+			scoreBox.text = 
+			'Your Time:\n' + timerSecs + 's' + 
+			'\nBest Time:\n' + localStorage.getItem('bestTimeSecs') + 's';
+		} else {
+			scoreBox.text = 
+			'Your Time:\n' + timerMins + 'm ' + timerSecs + 's' + 
+			'\nBest Time:\n' + localStorage.getItem('bestTimeSecs')  + 's';
+		}
+	} else {
+		if (timerMins < 1) {
+			scoreBox.text = 
+			'Your Time:\n' + timerSecs + 's' + 
+			'\nBest Time:\n' + localStorage.getItem('bestTimeMins') + 'm ' + localStorage.getItem('bestTimeSecs') + 's';
+		} else {
+			scoreBox.text = 
+			'Your Time:\n' + timerMins + 'm ' + timerSecs + 's' + 
+			'\nBest Time:\n' + localStorage.getItem('bestTimeMins') + 'm ' + localStorage.getItem('bestTimeSecs') + 's';
+		}
+	}
+}
+
+
+/*****************************************************************************************************/
+// timeTrial()
+// Called by draw()
+// On the first loop it initialises certain things, like spawning dust and changing the visibility of
+// sprites and groups of sprites, then it calls other functions.
+// This gamemode diplays the endscreen when every piece of dust is no longer visible.
+/*****************************************************************************************************/
+function timeTrial() {
+	while (initialising == true) {
+		player.rotation = playerDirection;
+		player.direction = playerDirection;
+
+		spawnDust(DUST_TO_SPAWN);
+
+		textBackground.y = 2+TEXT_REMOVE_ZONE_Y/2
+		textBackground.scale.y = 1;
+			
+		// Visibility
+		player.visible = true;
+		wallsGroup.visible = true;
+		userInterfaceGroup.visible = false;
+		userInterfaceGroup.collider = 'none';
+		scoreBox.visible = false;
+		textBackground.visible = true;
+		initialising = false;
+	}
+
+	handleInput();
+	drawDust();
+	removeDust();
+	calculateDustLeft();
+	allSprites.draw();
+	displayText('both'); // Pass 'dust' for dust remaining only and pass 'both' for both dust and the timer 
+
+	if (dustLeft == 0) {
+		initialising = true;
+		gameMode = 'endScreen';
+	}
+}
+
+
+/*****************************************************************************************************/
+// freeRoam()
+// Called by draw()
+// On the first loop it initialises certain things, like spawning dust and changing the visibility of
+// sprites and groups of sprites, then it calls other functions.
+// This gamemode deletes the dustArray, then respawns every piece of dust when every piece of dust is 
+// no longer visible.
+/*****************************************************************************************************/
+function freeRoam() {
+	while (initialising == true) {
+		player.rotation = playerDirection;
+		player.direction = playerDirection;
+
+		spawnDust(DUST_TO_SPAWN);
+
+		textBackground.y = 2+TEXT_REMOVE_ZONE_Y/4
+		textBackground.scale.y = 0.5;
+
+		// Visibility
+		player.visible = true;
+		wallsGroup.visible = true;
+		userInterfaceGroup.visible = false;
+		userInterfaceGroup.collider = 'none';
+		scoreBox.visible = false;
+		textBackground.visible = true;
+		initialising = false;
+	}
+
+	handleInput();
+	drawDust();
+	removeDust();
+	calculateDustLeft();
+	allSprites.draw();
+	displayText('dust'); // Pass 'dust' for dust remaining only and pass 'both' for both dust and the timer 
+
+	if (dustLeft == 0) {
+		dustArray.length = 0;
+		spawnDust(DUST_TO_SPAWN);
+	}
+}
+
+
+/*****************************************************************************************************/
+// startScreen()
+// Called by draw()
+// Detects presses of the two start buttons, then starts each gamemode respectively
+/*****************************************************************************************************/
+function startScreen() {
+	if (timeTrialStartButton.mouse.presses('left')) {
+		initialising = true;
+		gameMode = 'timeTrial';
+	}
+
+	if (freeRoamStartButton.mouse.presses('left')) {
+		initialising = true;
+		gameMode = 'freeRoam';
+	}
+}
+
+
+/*****************************************************************************************************/
+// endScreen()
+// Called by draw()
+// Stops the game, resets everything ready for another game, calls updateScoreBoxText() to display the
+// current game time and the local best time, then waits for the user to press the start buttons, 
+// similar to startScreen()
+/*****************************************************************************************************/
+function endScreen() {
+	while (initialising == true) {
+		// Reset player position, rotation and speed
+		player.speed = 0;
+		movingInReverse = false;
+		player.x = width/2;
+		player.y = height/2;
+		playerDirection = 270;
+		player.rotation = playerDirection;
+		player.direction = playerDirection;
+
+		// Change position of start buttons 
+		timeTrialStartButton.y = height/1.3-40;
+		freeRoamStartButton.y = height/1.3+40;	
+
+		// Display time, then reset the timers
+		updateScoreBoxText();
+		timer = 0;
+		timerSecs = 0;
+		timerMins = 0;
+
+		// Empty the array
+		dustArray.length = 0;
+			
+		// Visibility
+		player.visible = false;
+		wallsGroup.visible = false;
+		userInterfaceGroup.visible = true;
+		userInterfaceGroup.collider = 'kinematic';
+		scoreBox.visible = true;
+		textBackground.visible = false;
+		initialising = false;
+	}
+
+	if (timeTrialStartButton.mouse.presses('left')) {
+		initialising = true;
+		gameMode = 'timeTrial';
+	}
+
+	if (freeRoamStartButton.mouse.presses('left')) {
+		initialising = true;
+		gameMode = 'freeRoam';
+	}
+}
