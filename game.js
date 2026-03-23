@@ -9,13 +9,17 @@
 // Global Variables, Constants and Arrays
 /*****************************************************************************************************/
 
-const PLAYER_MOVEMENT_SPEED = 6;
+const PLAYER_MOVEMENT_SPEED = 4;
 const PLAYER_ROTATION_SPEED = 1.7;
 const DUST_TO_SPAWN = 10000;
 const DUST_SIZE = 6;
+const DUST_MOVEMENT_SPEED = 2; // Higher number = faster
+const WALL_THICKNESS = 1;
 const WALL_DUST_SPAWNING_OFFSET = 6;
-const REMOVAL_RADIUS = 60;
-const REMOVAL_DISTANCE_FROM_PLAYER = 90;
+const MOVE_RADIUS = 55;
+const REMOVAL_RADIUS = 30;
+const MOVE_DISTANCE_FROM_PLAYER = 80;
+const REMOVAL_DISTANCE_FROM_PLAYER = 62;
 const TEXT_REMOVE_ZONE_X = 260;
 const TEXT_REMOVE_ZONE_Y = 95;
 
@@ -41,6 +45,15 @@ var wallsGroup;
 
 
 /*****************************************************************************************************/
+// preload()
+// Loads assets before setup() is called
+/*****************************************************************************************************/
+function preload() {
+	playerImage = loadImage('/assets/playerImage.png');
+}
+
+
+/*****************************************************************************************************/
 // setup()
 // Initialises things such as sprites, also supplimented by the initialisation section in 
 // each gamemode's function
@@ -57,27 +70,28 @@ function setup() {
 	}
 
 	// Canvas
-	cnv = createCanvas(windowWidth -4,  windowHeight -4);
+	cnv = createCanvas(windowWidth - 4,  windowHeight - 4);
+	//cnv = createCanvas(640, 360);
 	cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
 
 	// Scale
-	scale = width/1916; // 1916 is the regular width
+	scale = width/1916; // 1916 is the regular width, where scale = exactly 1
 
 	// User Interface Group
 	userInterfaceGroup = new Group();
 
 	// Buttons
-	timeTrialStartButton = new Sprite(width/2, height/2-40, 400, 60, 'kinematic'); // Change these lines
+	timeTrialStartButton = new Sprite(width/2, height/2 - (40 * scale), 450, 60, 'kinematic');
 	timeTrialStartButton.color = '#1f8f28';
 	timeTrialStartButton.textSize = 30 * scale;
 	timeTrialStartButton.text = 'Start Time Trial';
 	timeTrialStartButton.scale = scale;
 	userInterfaceGroup.add(timeTrialStartButton);
 
-	freeRoamStartButton = new Sprite(width/2, height/2+40, 400, 60, 'kinematic');
+	freeRoamStartButton = new Sprite(width/2, height/2 + (40 * scale), 450, 60, 'kinematic');
 	freeRoamStartButton.color = '#2269ac';
 	freeRoamStartButton.textSize = 30 * scale;
-	freeRoamStartButton.text = 'Start Free Roam';
+	freeRoamStartButton.text = '(Experimental) Start Free Roam';
 	freeRoamStartButton.scale = scale;
 	userInterfaceGroup.add(freeRoamStartButton);
 
@@ -90,37 +104,43 @@ function setup() {
 	userInterfaceGroup.add(titleBox);
 
 	// In Game Score
-	textBackground = new Sprite(2+TEXT_REMOVE_ZONE_X/2, 2+TEXT_REMOVE_ZONE_Y/2, TEXT_REMOVE_ZONE_X, TEXT_REMOVE_ZONE_Y, 'kinematic');
+	textBackground = new Sprite(
+		WALL_THICKNESS + (TEXT_REMOVE_ZONE_X / 2) * scale, 
+		WALL_THICKNESS + (TEXT_REMOVE_ZONE_Y / 2) * scale, 
+		TEXT_REMOVE_ZONE_X, 
+		TEXT_REMOVE_ZONE_Y, 
+		'kinematic'
+	);
 	textBackground.color = 'white';
+	textBackground.scale.x = scale;
 	textBackground.visible = false;
 
 	// Post Game Score
 	scoreBox = new Sprite(width/2, height/2, 350, 200, 'none');
 	scoreBox.color = 'white';
+	scoreBox.scale = scale;
 	scoreBox.visible = false;
 
 	// Player
 	player = new Sprite(width/2, height/2, 120, 60, 'dynamic');
-	player.color = 'cyan';
-	player.text = "Front >";
-    player.textSize = 40;
-    player.textColor = 'white';
+	player.image = (playerImage);
 	player.rotation = playerDirection;
 	player.direction = playerDirection;
+	player.scale = scale;
 	player.visible = false;
 
 	// Collision Walls
 	wallsGroup = new Group();
-	wallLH = new Sprite(1, height/2, 1, height, 'kinematic');
+	wallLH = new Sprite(WALL_THICKNESS, height/2, WALL_THICKNESS, height, 'kinematic');
 	wallLH.color = 'black';
 	wallsGroup.add(wallLH);
-	wallRH = new Sprite(width-1, height/2, 1, height, 'kinematic');
+	wallRH = new Sprite(width - WALL_THICKNESS, height/2, WALL_THICKNESS, height, 'kinematic');
 	wallRH.color = 'black';
 	wallsGroup.add(wallRH);
-	wallTop = new Sprite(width/2, 1, width, 1, 'kinematic');
+	wallTop = new Sprite(width/2, WALL_THICKNESS, width, WALL_THICKNESS, 'kinematic');
 	wallTop.color = 'black';
 	wallsGroup.add(wallTop);
-	wallBot = new Sprite(width/2, height-1, width, 1, 'kinematic');
+	wallBot = new Sprite(width/2, height - WALL_THICKNESS, width, WALL_THICKNESS, 'kinematic');
 	wallBot.color = 'black';
 	wallsGroup.add(wallBot);
 	wallsGroup.visible = false;
@@ -182,10 +202,10 @@ function handleInput() {
 	player.direction = playerDirection;
 
 	if (kb.pressing('up')) {
-		player.speed = PLAYER_MOVEMENT_SPEED;
+		player.speed = PLAYER_MOVEMENT_SPEED * scale;
 	};
 	if (kb.pressing('down')) {    
-		player.speed = -PLAYER_MOVEMENT_SPEED;
+		player.speed = -PLAYER_MOVEMENT_SPEED * scale;
 		movingInReverse = true;
 	};
 
@@ -242,7 +262,7 @@ function drawDust() {
 	for (var i = 0; i < dustArray.length; i++) {
 		if (dustArray[i].visible == true) {
 			stroke(dustArray[i].color);
-			strokeWeight(DUST_SIZE);
+			strokeWeight(DUST_SIZE * scale);
 			point(dustArray[i].xPos, dustArray[i].yPos);
 		}
 	}
@@ -250,6 +270,47 @@ function drawDust() {
 	// Reset stroke size and colour
 	stroke('black');
 	strokeWeight(1);
+}
+
+
+/*****************************************************************************************************/
+// moveDust()
+/*****************************************************************************************************/
+function moveDust() {
+	var xPosDustMoveCircle = player.x + cos(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
+	var yPosDustMoveCircle = player.y + sin(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
+
+	// Debug
+	noFill();
+	stroke('cyan');
+	circle(xPosDustMoveCircle, yPosDustMoveCircle, (MOVE_RADIUS * 2) * scale); 
+	fill('black')
+	stroke('black');
+	//console.log('x pos' + xPosDustMoveCircle + 'x pos player' + player.x)
+	//console.log('y pos' + yPosDustMoveCircle + 'y pos player' + player.y)
+
+	for (var i = 0; i < dustArray.length; i++) {
+		if (((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((MOVE_RADIUS * scale) ** 2)) {
+			dustArray[i].xPos = dustArray[i].xPos - ((dustArray[i].xPos - xPosDustMoveCircle) / (Math.sqrt(((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2))) * DUST_MOVEMENT_SPEED);
+			dustArray[i].yPos = dustArray[i].yPos - ((dustArray[i].yPos - yPosDustMoveCircle) / (Math.sqrt(((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2))) * DUST_MOVEMENT_SPEED);
+		}
+
+		/*if (gameMode == 'timeTrial' && 
+			initialising == true && 
+			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
+			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y + WALL_DUST_SPAWNING_OFFSET) * scale
+		) {
+			dustArray[i].visible = false;
+		}
+		
+		if (gameMode == 'freeRoam' && 
+			initialising == true && 
+			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
+			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y/2 + WALL_DUST_SPAWNING_OFFSET) * scale
+		) {
+			dustArray[i].visible = false;
+		}*/
+	}
 }
 
 
@@ -265,33 +326,37 @@ function drawDust() {
 // parameter to false
 /*****************************************************************************************************/
 function removeDust() {
-	xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
-	yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER;
+	var xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
+	var yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
 
 	// Debug
 	noFill();
 	stroke('purple');
-	circle(xPosDustRemovalCircle, yPosDustRemovalCircle, REMOVAL_RADIUS*2); 
+	circle(xPosDustRemovalCircle, yPosDustRemovalCircle, (REMOVAL_RADIUS * 2) * scale); 
 	fill('black')
 	stroke('black');
 	//console.log('x pos' + xPosDustRemovalCircle + 'x pos player' + player.x)
 	//console.log('y pos' + yPosDustRemovalCircle + 'y pos player' + player.y)
 
 	for (var i = 0; i < dustArray.length; i++) {
-		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < (REMOVAL_RADIUS ** 2)) {
+		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < ((REMOVAL_RADIUS * scale) ** 2)) {
 			dustArray[i].visible = false;
 		}
 
-		if (gameMode == 'timeTrial' && initialising == true) {
-			if (dustArray[i].xPos < TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET && dustArray[i].yPos < TEXT_REMOVE_ZONE_Y + WALL_DUST_SPAWNING_OFFSET) {
-				dustArray[i].visible = false;
-			}
+		if (gameMode == 'timeTrial' && 
+			initialising == true && 
+			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
+			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y + WALL_DUST_SPAWNING_OFFSET) * scale
+		) {
+			dustArray[i].visible = false;
 		}
 		
-		if (gameMode == 'freeRoam' && initialising == true) {
-			if (dustArray[i].xPos < TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET && dustArray[i].yPos < TEXT_REMOVE_ZONE_Y/2 + WALL_DUST_SPAWNING_OFFSET) {
-				dustArray[i].visible = false;
-			}
+		if (gameMode == 'freeRoam' && 
+			initialising == true && 
+			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
+			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y/2 + WALL_DUST_SPAWNING_OFFSET) * scale
+		) {
+			dustArray[i].visible = false;
 		}
 	}
 }
@@ -331,7 +396,7 @@ function calculateDustLeft() {
 // the 'textBackground' sprite
 /*****************************************************************************************************/
 function displayText(displayMode) {
-	textBackground.textSize = 30;
+	textBackground.textSize = 30 * scale;
 
 	if (dustLeft !== 0 && frameCount % 60 == 0) {
 		timer++;
@@ -358,7 +423,7 @@ function displayText(displayMode) {
 // time is faster than the local time, it updates the local time to be the current game time. 
 /*****************************************************************************************************/
 function updateScoreBoxText() {
-	scoreBox.textSize = 30;
+	scoreBox.textSize = 30 * scale;
 	if (parseInt(localStorage.getItem('bestTimeTimer')) > timer) {
 		localStorage.setItem('bestTimeMins', timerMins);
 		localStorage.setItem('bestTimeSecs', timerSecs);
@@ -403,8 +468,8 @@ function timeTrial() {
 
 		spawnDust(DUST_TO_SPAWN);
 
-		textBackground.y = 2+TEXT_REMOVE_ZONE_Y/2
-		textBackground.scale.y = 1;
+		textBackground.y = WALL_THICKNESS + ((TEXT_REMOVE_ZONE_Y / 2) * scale);
+		textBackground.scale.y = 1 * scale;
 			
 		// Visibility
 		player.visible = true;
@@ -418,6 +483,7 @@ function timeTrial() {
 
 	handleInput();
 	drawDust();
+	moveDust();
 	removeDust();
 	calculateDustLeft();
 	allSprites.draw();
@@ -445,8 +511,8 @@ function freeRoam() {
 
 		spawnDust(DUST_TO_SPAWN);
 
-		textBackground.y = 2+TEXT_REMOVE_ZONE_Y/4
-		textBackground.scale.y = 0.5;
+		textBackground.y = WALL_THICKNESS + ((TEXT_REMOVE_ZONE_Y / 4) * scale);
+		textBackground.scale.y = 0.5 * scale;
 
 		// Visibility
 		player.visible = true;
@@ -460,6 +526,7 @@ function freeRoam() {
 
 	handleInput();
 	drawDust();
+	moveDust();
 	removeDust();
 	calculateDustLeft();
 	allSprites.draw();
@@ -509,8 +576,8 @@ function endScreen() {
 		player.direction = playerDirection;
 
 		// Change position of start buttons 
-		timeTrialStartButton.y = height/1.3-40;
-		freeRoamStartButton.y = height/1.3+40;	
+		timeTrialStartButton.y = height / 1.3 - (40 * scale);
+		freeRoamStartButton.y = height / 1.3 + (40 * scale);	
 
 		// Display time, then reset the timers
 		updateScoreBoxText();
