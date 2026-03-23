@@ -9,11 +9,12 @@
 // Global Variables, Constants and Arrays
 /*****************************************************************************************************/
 
+
 const PLAYER_MOVEMENT_SPEED = 4;
 const PLAYER_ROTATION_SPEED = 1.7;
 const DUST_TO_SPAWN = 10000;
 const DUST_SIZE = 6;
-const DUST_MOVEMENT_SPEED = 2; // Higher number = faster
+const DUST_MOVEMENT_SPEED = 0.4; // Lower number = faster
 const WALL_THICKNESS = 1;
 const WALL_DUST_SPAWNING_OFFSET = 6;
 const MOVE_RADIUS = 55;
@@ -25,6 +26,7 @@ const TEXT_REMOVE_ZONE_Y = 95;
 
 const dustArray = [];
 
+var debugMode = true;
 var playerDirection = 270;
 var movingInReverse = false;
 var dustLeft = 0;
@@ -40,6 +42,7 @@ var dustGroup;
 var textBackground;
 var timeTrialStartButton;
 var freeRoamStartButton;
+var controlsButton;
 var userInterfaceGroup;
 var wallsGroup;
 
@@ -59,9 +62,6 @@ function preload() {
 // each gamemode's function
 /*****************************************************************************************************/
 function setup() {
-	// Debug
-	//p5play.renderStats = true;
-
 	// Best Time Setup
 	if (localStorage.getItem('bestTimeTimer') == null) {
 		localStorage.setItem('bestTimeMins', 5);
@@ -100,6 +100,12 @@ function setup() {
 	freeRoamStartButton.scale = scale;
 	userInterfaceGroup.add(freeRoamStartButton);
 
+	controlsButton = new Sprite(width/2, height/2 + (120 * scale), 450, 60, 'kinematic');
+	controlsButton.color = '#5a5a5a';
+	controlsButton.textSize = 30 * scale;
+	controlsButton.text = 'View Controls';
+	controlsButton.scale = scale;
+
 	// Title Text 
 	titleBox = new Sprite(width/2, height/4, 600, 100, 'kinematic');
 	titleBox.color = 'white';
@@ -107,6 +113,14 @@ function setup() {
 	titleBox.text = 'Vacuuming Simulator';
 	titleBox.scale = scale;
 	userInterfaceGroup.add(titleBox);
+
+	// Player
+	player = new Sprite(width/2, height/2, 165, 85, 'dynamic');
+	player.image = (playerImage);
+	player.rotation = playerDirection;
+	player.direction = playerDirection;
+	player.scale = scale;
+	player.visible = false;
 
 	// In Game Score
 	textBackground = new Sprite(
@@ -125,14 +139,6 @@ function setup() {
 	scoreBox.color = 'white';
 	scoreBox.scale = scale;
 	scoreBox.visible = false;
-
-	// Player
-	player = new Sprite(width/2, height/2, 120, 60, 'dynamic');
-	player.image = (playerImage);
-	player.rotation = playerDirection;
-	player.direction = playerDirection;
-	player.scale = scale;
-	player.visible = false;
 
 	// Collision Walls
 	wallsGroup = new Group();
@@ -159,6 +165,11 @@ function setup() {
 function draw() {
 	background('lightgrey'); 
 
+	// Debug
+	if (debugMode == true) {
+		p5play.renderStats = true;
+	}
+
 	if (gameMode == 'timeTrial') {
 		timeTrial();
 		return;
@@ -176,6 +187,11 @@ function draw() {
 
 	if (gameMode == 'endScreen') {
 		endScreen();
+		return;
+	}
+
+	if (gameMode == 'controlsScreen') {
+		controlsScreen();
 		return;
 	}
 }
@@ -282,24 +298,33 @@ function drawDust() {
 
 /*****************************************************************************************************/
 // moveDust()
+// Called by timeTrial(), freeRoam() and spawnDust()
+// Uses sine and cosine to find the x and y position of a point ahead of the player, then it uses
+// pythagoras to find the distance from the x and y position of each piece of dust in the array to the
+// x and y position of the point ahead of the player, if the distance is shorter than MOVE_RADIUS,
+// then it changes that piece of dusts x and y position to the horizontal and vertical distance between
+// the dust and the point ahead of the player divided by DUST_MOVEMENT_SPEED divided by the direct 
+// distance between the point ahead of the player and the piece of dust
+// Also, when initialising it makes any dust in the move circle not visible so they will be redraw in 
+// the spawnDust() function.
 /*****************************************************************************************************/
 function moveDust() {
 	var xPosDustMoveCircle = player.x + cos(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
 	var yPosDustMoveCircle = player.y + sin(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
 
 	// Debug
-	noFill();
-	stroke('cyan');
-	circle(xPosDustMoveCircle, yPosDustMoveCircle, (MOVE_RADIUS * 2) * scale); 
-	fill('black')
-	stroke('black');
-	//console.log('x pos' + xPosDustMoveCircle + 'x pos player' + player.x)
-	//console.log('y pos' + yPosDustMoveCircle + 'y pos player' + player.y)
+	if (debugMode == true) {
+		noFill();
+		stroke('cyan');
+		circle(xPosDustMoveCircle, yPosDustMoveCircle, (MOVE_RADIUS * 2) * scale); 
+		fill('black')
+		stroke('black');
+	}
 
 	for (var i = 0; i < dustArray.length; i++) {
 		if (((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((MOVE_RADIUS * scale) ** 2)) {
-			dustArray[i].xPos = dustArray[i].xPos - ((dustArray[i].xPos - xPosDustMoveCircle) / (Math.sqrt(((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2))) * DUST_MOVEMENT_SPEED);
-			dustArray[i].yPos = dustArray[i].yPos - ((dustArray[i].yPos - yPosDustMoveCircle) / (Math.sqrt(((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2))) * DUST_MOVEMENT_SPEED);
+			dustArray[i].xPos = dustArray[i].xPos - ((dustArray[i].xPos - xPosDustMoveCircle) / DUST_MOVEMENT_SPEED / (Math.sqrt(((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2))));
+			dustArray[i].yPos = dustArray[i].yPos - ((dustArray[i].yPos - yPosDustMoveCircle) / DUST_MOVEMENT_SPEED / (Math.sqrt(((dustArray[i].yPos - yPosDustMoveCircle) ** 2) + ((dustArray[i].xPos - xPosDustMoveCircle) ** 2))));
 		}
 
 		if (initialising == true && ((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((MOVE_RADIUS * scale) ** 2)) {
@@ -311,7 +336,7 @@ function moveDust() {
 
 /*****************************************************************************************************/
 // removeDust()
-// Called by timeTrial() and freeRoam()
+// Called by timeTrial(), freeRoam() and spawnDust()
 // Uses sine and cosine to find the x and y position of a point ahead of the player, then it uses
 // pythagoras to find the distance from the x and y position of each piece of dust in the array to the
 // x and y position of the point ahead of the player, if the distance is shorter than REMOVAL_RADIUS,
@@ -325,13 +350,13 @@ function removeDust() {
 	var yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
 
 	// Debug
-	noFill();
-	stroke('purple');
-	circle(xPosDustRemovalCircle, yPosDustRemovalCircle, (REMOVAL_RADIUS * 2) * scale); 
-	fill('black')
-	stroke('black');
-	//console.log('x pos' + xPosDustRemovalCircle + 'x pos player' + player.x)
-	//console.log('y pos' + yPosDustRemovalCircle + 'y pos player' + player.y)
+	if (debugMode == true) {
+		noFill();
+		stroke('purple');
+		circle(xPosDustRemovalCircle, yPosDustRemovalCircle, (REMOVAL_RADIUS * 2) * scale); 
+		fill('black')
+		stroke('black');
+	}
 
 	for (var i = 0; i < dustArray.length; i++) {
 		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < ((REMOVAL_RADIUS * scale) ** 2)) {
@@ -471,6 +496,8 @@ function timeTrial() {
 		wallsGroup.visible = true;
 		userInterfaceGroup.visible = false;
 		userInterfaceGroup.collider = 'none';
+		controlsButton.visible = false;
+		controlsButton.collider = 'none';
 		scoreBox.visible = false;
 		textBackground.visible = true;
 		initialising = false;
@@ -514,6 +541,8 @@ function freeRoam() {
 		wallsGroup.visible = true;
 		userInterfaceGroup.visible = false;
 		userInterfaceGroup.collider = 'none';
+		controlsButton.visible = false;
+		controlsButton.collider = 'none';
 		scoreBox.visible = false;
 		textBackground.visible = true;
 		initialising = false;
@@ -537,9 +566,24 @@ function freeRoam() {
 /*****************************************************************************************************/
 // startScreen()
 // Called by draw()
-// Detects presses of the two start buttons, then starts each gamemode respectively
+// On the first run it resets everything associated with the controls screen, just in case the game is 
+// going back from the controls screen. Then the function detects presses of the two start buttons and 
+// the controls button, then starts each gamemode (or changes to the controls screen) respectively
 /*****************************************************************************************************/
 function startScreen() {
+	while (initialising == true) {
+		controlsButton.y = height/2 + (120 * scale)
+		controlsButton.text = 'View Controls';
+
+		userInterfaceGroup.visible = true;
+		userInterfaceGroup.collider = 'kinematic';
+		
+		scoreBox.visible = false;
+		scoreBox.scale.x = scale;
+		scoreBox.text = '';
+		initialising = false;
+	}
+
 	if (timeTrialStartButton.mouse.presses('left')) {
 		initialising = true;
 		gameMode = 'timeTrial';
@@ -548,6 +592,11 @@ function startScreen() {
 	if (freeRoamStartButton.mouse.presses('left')) {
 		initialising = true;
 		gameMode = 'freeRoam';
+	}
+
+	if (controlsButton.mouse.presses('left')) {
+		initialising = true;
+		gameMode = 'controlsScreen';
 	}
 }
 
@@ -601,5 +650,34 @@ function endScreen() {
 	if (freeRoamStartButton.mouse.presses('left')) {
 		initialising = true;
 		gameMode = 'freeRoam';
+	}
+}
+
+/*****************************************************************************************************/
+// controlsScreen()
+// Called by draw()
+// On the first run it display controls text in the score box that usually displays the final score, 
+// it also changes the text of the controls button to act as a back button, and when pressed it brings 
+// the game to the start screen
+/*****************************************************************************************************/
+function controlsScreen() {
+	while (initialising == true) {
+		controlsButton.visible = true;
+		controlsButton.y = height/2 + (240 * scale)
+		controlsButton.text = 'Back To Menu';
+
+		userInterfaceGroup.visible = false;
+		userInterfaceGroup.collider = 'none';
+		
+		scoreBox.visible = true;
+		scoreBox.scale.x = 2 * scale;
+		scoreBox.textSize = 30 * scale;
+		scoreBox.text = 'WASD or arrow keys to move and rotate player\nCollect all dust to win\nYour time will be recorded in time trial mode'
+		initialising = false;
+	}
+
+	if (controlsButton.mouse.presses('left')) {
+		initialising = true;
+		gameMode = 'startScreen';
 	}
 }
