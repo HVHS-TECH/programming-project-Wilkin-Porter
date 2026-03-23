@@ -13,3 +13,5 @@ b. make the array only have to be checked once per frame rather than the 4-5 it'
 
 y = 1/x 
 y is distance from player, must be positive, x is new position, or speed ig 
+
+replace removal circle with a timer and movement

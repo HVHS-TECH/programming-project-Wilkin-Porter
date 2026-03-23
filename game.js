@@ -70,7 +70,12 @@ function setup() {
 	}
 
 	// Canvas
-	cnv = createCanvas(windowWidth - 4,  windowHeight - 4);
+	if (windowWidth / 16 > windowHeight / 9) {
+		cnv = createCanvas(((windowHeight / 9) * 16) - 4, windowHeight - 4);
+	} else {
+		cnv = createCanvas(windowWidth - 4, ((windowWidth / 16) * 9) - 4);
+	}
+	
 	//cnv = createCanvas(640, 360);
 	cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
 
@@ -237,6 +242,7 @@ function spawnDust(dustToSpawn) {
 		});
 	}
 
+	moveDust();
 	removeDust();
 	
 	while (calculateDustLeft() < DUST_TO_SPAWN) {
@@ -247,6 +253,7 @@ function spawnDust(dustToSpawn) {
 				dustArray[i].visible = true;
 			} 
 		}
+		moveDust();
 		removeDust();
 	}
 }
@@ -295,21 +302,9 @@ function moveDust() {
 			dustArray[i].yPos = dustArray[i].yPos - ((dustArray[i].yPos - yPosDustMoveCircle) / (Math.sqrt(((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2))) * DUST_MOVEMENT_SPEED);
 		}
 
-		/*if (gameMode == 'timeTrial' && 
-			initialising == true && 
-			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
-			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y + WALL_DUST_SPAWNING_OFFSET) * scale
-		) {
+		if (initialising == true && ((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((MOVE_RADIUS * scale) ** 2)) {
 			dustArray[i].visible = false;
 		}
-		
-		if (gameMode == 'freeRoam' && 
-			initialising == true && 
-			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
-			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y/2 + WALL_DUST_SPAWNING_OFFSET) * scale
-		) {
-			dustArray[i].visible = false;
-		}*/
 	}
 }
 
