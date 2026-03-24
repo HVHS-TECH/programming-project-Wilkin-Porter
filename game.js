@@ -40,6 +40,7 @@ var scale;
 var player;
 var dustGroup;
 var textBackground;
+var freeRoamExitButton;
 var timeTrialStartButton;
 var freeRoamStartButton;
 var controlsButton;
@@ -133,6 +134,20 @@ function setup() {
 	textBackground.color = 'white';
 	textBackground.scale.x = scale;
 	textBackground.visible = false;
+
+	// Free Roam Exit Button
+	freeRoamExitButton = new Sprite(
+		WALL_THICKNESS + (TEXT_REMOVE_ZONE_X / 2) * scale, 
+		WALL_THICKNESS + (TEXT_REMOVE_ZONE_Y / 1.5) * scale, 
+		TEXT_REMOVE_ZONE_X, 
+		TEXT_REMOVE_ZONE_Y/2	, 
+		'kinematic'
+	);
+	freeRoamExitButton.color = 'red';
+	freeRoamExitButton.textSize = 30 * scale;
+	freeRoamExitButton.text = 'Exit Free Roam';
+	freeRoamExitButton.scale.x = scale;
+	freeRoamExitButton.visible = false;
 
 	// Post Game Score
 	scoreBox = new Sprite(width/2, height/2, 350, 200, 'none');
@@ -545,6 +560,7 @@ function freeRoam() {
 		controlsButton.collider = 'none';
 		scoreBox.visible = false;
 		textBackground.visible = true;
+		freeRoamExitButton.visible = true;
 		initialising = false;
 	}
 
@@ -581,6 +597,7 @@ function startScreen() {
 		scoreBox.visible = false;
 		scoreBox.scale.x = scale;
 		scoreBox.text = '';
+		freeRoamExitButton.visible = false;
 		initialising = false;
 	}
 
