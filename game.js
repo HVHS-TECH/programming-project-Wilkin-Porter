@@ -12,12 +12,14 @@
 
 const PLAYER_MOVEMENT_SPEED = 4;
 const PLAYER_ROTATION_SPEED = 1.7;
+const INDICATOR_MODE = 'none';
 const DUST_TO_SPAWN = 10000;
 const DUST_SIZE = 6;
 const DUST_MOVEMENT_SPEED = 0.4; // Lower number = faster
 const WALL_THICKNESS = 1;
 const WALL_DUST_SPAWNING_OFFSET = 6;
-const MOVE_RADIUS = 55;
+const MOVE_RADIUS_NORMAL = 55;
+const MOVE_RADIUS_BOOST = 100;
 const REMOVAL_RADIUS = 30;
 const MOVE_DISTANCE_FROM_PLAYER = 80;
 const REMOVAL_DISTANCE_FROM_PLAYER = 62;
@@ -31,6 +33,7 @@ var playerDirection = 270;
 var movingInReverse = false;
 var dustLeft = 0;
 var totalDustSucked = 0;
+var moveRadius = 55;
 var timer = 0;
 var timerSecs = 0;
 var timerMins = 0;
@@ -55,7 +58,10 @@ var wallsGroup;
 // Loads assets before setup() is called
 /*****************************************************************************************************/
 function preload() {
-	playerImage = loadImage('/assets/playerImage.png');
+	indicatorHigh = loadImage('/assets/indicatorHigh.png');
+	indicatorMedium = loadImage('/assets/indicatorMedium.png');
+	indicatorLow = loadImage('/assets/indicatorLow.png');
+	indicatorNone = loadImage('/assets/indicatorNone.png');
 }
 
 
@@ -99,7 +105,7 @@ function setup() {
 	freeRoamStartButton = new Sprite(width/2, height/2 + (40 * scale), 450, 60, 'kinematic');
 	freeRoamStartButton.color = '#2269ac';
 	freeRoamStartButton.textSize = 30 * scale;
-	freeRoamStartButton.text = '(Experimental) Start Free Roam';
+	freeRoamStartButton.text = 'Start Free Roam';
 	freeRoamStartButton.scale = scale;
 	userInterfaceGroup.add(freeRoamStartButton);
 
@@ -119,7 +125,7 @@ function setup() {
 
 	// Player
 	player = new Sprite(width/2, height/2, 165, 85, 'dynamic');
-	player.image = (playerImage);
+	player.image = (indicatorNone);
 	player.rotation = playerDirection;
 	player.direction = playerDirection;
 	player.scale = scale;
@@ -140,12 +146,12 @@ function setup() {
 	// Free Roam Exit Button
 	freeRoamExitButton = new Sprite(
 		WALL_THICKNESS + (TEXT_REMOVE_ZONE_X / 2) * scale, 
-		WALL_THICKNESS + (TEXT_REMOVE_ZONE_Y / 1.5) * scale, 
+		WALL_THICKNESS + (TEXT_REMOVE_ZONE_Y - (TEXT_REMOVE_ZONE_Y /4)) * scale, 
 		TEXT_REMOVE_ZONE_X, 
 		TEXT_REMOVE_ZONE_Y/2	, 
 		'kinematic'
 	);
-	freeRoamExitButton.color = 'red';
+	freeRoamExitButton.color = '#cc4444';
 	freeRoamExitButton.textSize = 30 * scale;
 	freeRoamExitButton.text = 'Exit Free Roam';
 	freeRoamExitButton.scale.x = scale;
@@ -318,7 +324,7 @@ function drawDust() {
 // Called by timeTrial(), freeRoam() and spawnDust()
 // Uses sine and cosine to find the x and y position of a point ahead of the player, then it uses
 // pythagoras to find the distance from the x and y position of each piece of dust in the array to the
-// x and y position of the point ahead of the player, if the distance is shorter than MOVE_RADIUS,
+// x and y position of the point ahead of the player, if the distance is shorter than moveRadius,
 // then it changes that piece of dusts x and y position to the horizontal and vertical distance between
 // the dust and the point ahead of the player divided by DUST_MOVEMENT_SPEED divided by the direct 
 // distance between the point ahead of the player and the piece of dust
@@ -333,18 +339,18 @@ function moveDust() {
 	if (debugMode == true) {
 		noFill();
 		stroke('cyan');
-		circle(xPosDustMoveCircle, yPosDustMoveCircle, (MOVE_RADIUS * 2) * scale); 
+		circle(xPosDustMoveCircle, yPosDustMoveCircle, (moveRadius * 2) * scale); 
 		fill('black')
 		stroke('black');
 	}
 
 	for (var i = 0; i < dustArray.length; i++) {
-		if (((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((MOVE_RADIUS * scale) ** 2)) {
+		if (((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((moveRadius * scale) ** 2)) {
 			dustArray[i].xPos = dustArray[i].xPos - ((dustArray[i].xPos - xPosDustMoveCircle) / DUST_MOVEMENT_SPEED / (Math.sqrt(((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2))));
 			dustArray[i].yPos = dustArray[i].yPos - ((dustArray[i].yPos - yPosDustMoveCircle) / DUST_MOVEMENT_SPEED / (Math.sqrt(((dustArray[i].yPos - yPosDustMoveCircle) ** 2) + ((dustArray[i].xPos - xPosDustMoveCircle) ** 2))));
 		}
 
-		if (initialising == true && ((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((MOVE_RADIUS * scale) ** 2)) {
+		if (initialising == true && ((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((moveRadius * scale) ** 2)) {
 			dustArray[i].visible = false;
 		}
 	}
@@ -521,6 +527,7 @@ function timeTrial() {
 	moveDust();
 	removeDust();
 	calculateDustLeft();
+	changePlayerImage();
 	allSprites.draw();
 	displayText();
 
@@ -569,6 +576,7 @@ function freeRoam() {
 	moveDust();
 	removeDust();
 	calculateDustLeft();
+	changePlayerImage();
 	allSprites.draw();
 	displayText();
 
@@ -708,5 +716,50 @@ function controlsScreen() {
 	if (controlsButton.mouse.presses('left')) {
 		initialising = true;
 		gameMode = 'startScreen';
+	}
+}
+
+/*****************************************************************************************************/
+// changePlayerImage()
+/*****************************************************************************************************/
+function changePlayerImage() {
+	/*if (INDICATOR_MODE == 'boost') {
+		if (kb.presses('space') && changePlayerImageBoostMode == 'ready') {
+			var changePlayerImageBoostMode = 'discharge';
+			var changePlayerImageBoostModeTimer = 3; // change
+			moveRadius = MOVE_RADIUS_BOOST;
+		}
+
+		if (changePlayerImageBoostMode == 'discharge') {
+			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
+				changePlayerImageBoostModeTimer--;
+				player.image = (indicator4);
+			}
+
+			if (changePlayerImageBoostModeTimer == 0) {
+				moveRadius = MOVE_RADIUS_NORMAL;
+			}
+		}
+	}*/
+
+	if (INDICATOR_MODE == 'display') {
+		if (dustLeft < DUST_TO_SPAWN * 0.25) {
+			player.image = (indicatorHigh);
+			return;
+		}
+
+		if (dustLeft < DUST_TO_SPAWN * 0.5) {
+			player.image = (indicatorMedium);
+			return;
+		}
+
+		if (dustLeft < DUST_TO_SPAWN * 0.75) {
+			player.image = (indicatorLow);
+			return;
+		}
+	}
+
+	if (INDICATOR_MODE == 'none') {
+		player.image = (indicatorHigh);
 	}
 }

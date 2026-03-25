@@ -1,9 +1,6 @@
 Features to add:
 1. Art
 1. Optimise 
-3. Make sizes properly dynamic
-4. Controls screen
-5. Add an exit button for freeroam
 6. hold space to boost dust move radius for a few seconds, decreases battery then slowly recharges, or battery indicator is replaced with fullness indicator
 7. Player acceleration?
 
