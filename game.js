@@ -30,10 +30,12 @@ var debugMode = true;
 var playerDirection = 270;
 var movingInReverse = false;
 var dustLeft = 0;
+var totalDustSucked = 0;
 var timer = 0;
 var timerSecs = 0;
 var timerMins = 0;
 var gameMode = 'startScreen';
+var gameModePostGame = '';
 var initialising = true;
 var scale;
 
@@ -374,22 +376,16 @@ function removeDust() {
 	}
 
 	for (var i = 0; i < dustArray.length; i++) {
-		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < ((REMOVAL_RADIUS * scale) ** 2)) {
+		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < ((REMOVAL_RADIUS * scale) ** 2) && dustArray[i].visible == true) {
 			dustArray[i].visible = false;
+			if (initialising !== true) {
+				totalDustSucked = totalDustSucked + 1;
+			}
 		}
 
-		if (gameMode == 'timeTrial' && 
-			initialising == true && 
+		if (initialising == true && 
 			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
 			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y + WALL_DUST_SPAWNING_OFFSET) * scale
-		) {
-			dustArray[i].visible = false;
-		}
-		
-		if (gameMode == 'freeRoam' && 
-			initialising == true && 
-			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
-			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y/2 + WALL_DUST_SPAWNING_OFFSET) * scale
 		) {
 			dustArray[i].visible = false;
 		}
@@ -430,16 +426,16 @@ function calculateDustLeft() {
 // 59 (timerSecs) before rolling over to minutes (timerMins). It displays timerSecs and timerMins on 
 // the 'textBackground' sprite
 /*****************************************************************************************************/
-function displayText(displayMode) {
+function displayText() {
 	textBackground.textSize = 30 * scale;
 
-	if (dustLeft !== 0 && frameCount % 60 == 0) {
+	if (dustLeft !== 0 && frameCount % 60 == 0 && gameMode == 'timeTrial') {
 		timer++;
 		timerSecs = timer % 60;
 		timerMins = Math.trunc(timer / 60);
 	}
 
-	if (displayMode == 'both') {
+	if (gameMode == 'timeTrial') {
 		if (timerMins < 1) {
 			textBackground.text = "Dust Left: " + dustLeft + "\nTime: " + timerSecs + 's', 20, 40;
 		} else {
@@ -498,6 +494,8 @@ function updateScoreBoxText() {
 /*****************************************************************************************************/
 function timeTrial() {
 	while (initialising == true) {
+		gameModePostGame = 'timeTrial';
+		totalDustSucked = 0;
 		player.rotation = playerDirection;
 		player.direction = playerDirection;
 
@@ -524,7 +522,7 @@ function timeTrial() {
 	removeDust();
 	calculateDustLeft();
 	allSprites.draw();
-	displayText('both'); // Pass 'dust' for dust remaining only and pass 'both' for both dust and the timer 
+	displayText();
 
 	if (dustLeft == 0) {
 		initialising = true;
@@ -543,6 +541,8 @@ function timeTrial() {
 /*****************************************************************************************************/
 function freeRoam() {
 	while (initialising == true) {
+		gameModePostGame = 'freeRoam';
+		totalDustSucked = 0;
 		player.rotation = playerDirection;
 		player.direction = playerDirection;
 
@@ -570,11 +570,16 @@ function freeRoam() {
 	removeDust();
 	calculateDustLeft();
 	allSprites.draw();
-	displayText('dust'); // Pass 'dust' for dust remaining only and pass 'both' for both dust and the timer 
+	displayText();
 
 	if (dustLeft == 0) {
 		dustArray.length = 0;
 		spawnDust(DUST_TO_SPAWN);
+	}
+
+	if (freeRoamExitButton.mouse.presses('left')) {
+		initialising = true;
+		gameMode = 'endScreen';
 	}
 }
 
@@ -641,11 +646,16 @@ function endScreen() {
 		freeRoamStartButton.y = height / 1.3 + (40 * scale);	
 
 		// Display time, then reset the timers
-		updateScoreBoxText();
-		timer = 0;
-		timerSecs = 0;
-		timerMins = 0;
-
+		if (gameModePostGame == 'timeTrial') {
+			updateScoreBoxText();
+			timer = 0;
+			timerSecs = 0;
+			timerMins = 0;
+		} else {
+			scoreBox.textSize = 30 * scale;
+			scoreBox.text = 'Total Dust Sucked Up\n' + totalDustSucked;
+		}
+		
 		// Empty the array
 		dustArray.length = 0;
 			
@@ -656,6 +666,7 @@ function endScreen() {
 		userInterfaceGroup.collider = 'kinematic';
 		scoreBox.visible = true;
 		textBackground.visible = false;
+		freeRoamExitButton.visible = false;
 		initialising = false;
 	}
 
@@ -669,6 +680,7 @@ function endScreen() {
 		gameMode = 'freeRoam';
 	}
 }
+
 
 /*****************************************************************************************************/
 // controlsScreen()
