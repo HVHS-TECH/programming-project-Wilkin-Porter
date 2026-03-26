@@ -64,10 +64,10 @@ var wallsGroup;
 // Loads assets before setup() is called
 /*****************************************************************************************************/
 function preload() {
-	indicatorHigh = loadImage('assets/indicatorHigh.png');
-	indicatorMedium = loadImage('assets/indicatorMedium.png');
-	indicatorLow = loadImage('assets/indicatorLow.png');
-	indicatorNone = loadImage('assets/indicatorNone.png');
+	indicatorHigh = loadImage('./assets/indicatorHigh.png');
+	indicatorMedium = loadImage('./assets/indicatorMedium.png');
+	indicatorLow = loadImage('./assets/indicatorLow.png');
+	indicatorNone = loadImage('./assets/indicatorNone.png');
 }
 
 
