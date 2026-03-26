@@ -9,10 +9,13 @@
 // Global Variables, Constants and Arrays
 /*****************************************************************************************************/
 
+ // Set to 'boost' so the player can press spacebar to increase their suction radius temporarily
+ // set to 'display' so the vacuum cleaner displays how much dust is left
+ // Set to 'none' so the vacuum cleaner only shows full and doesn't change
+const INDICATOR_MODE = 'boost';
 
 const PLAYER_MOVEMENT_SPEED = 4;
 const PLAYER_ROTATION_SPEED = 1.7;
-const INDICATOR_MODE = 'none';
 const DUST_TO_SPAWN = 10000;
 const DUST_SIZE = 6;
 const DUST_MOVEMENT_SPEED = 0.4; // Lower number = faster
@@ -41,7 +44,10 @@ var gameMode = 'startScreen';
 var gameModePostGame = '';
 var initialising = true;
 var scale;
+var changePlayerImageBoostModeTimer;
+var changePlayerImageBoostMode = 'ready';
 
+var canvas;
 var player;
 var dustGroup;
 var textBackground;
@@ -80,13 +86,13 @@ function setup() {
 
 	// Canvas
 	if (windowWidth / 16 > windowHeight / 9) {
-		cnv = createCanvas(((windowHeight / 9) * 16) - 4, windowHeight - 4);
+		canvas = createCanvas(((windowHeight / 9) * 16) - 4, windowHeight - 4);
 	} else {
-		cnv = createCanvas(windowWidth - 4, ((windowWidth / 16) * 9) - 4);
+		canvas = createCanvas(windowWidth - 4, ((windowWidth / 16) * 9) - 4);
 	}
 	
 	//cnv = createCanvas(640, 360);
-	cnv.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
+	canvas.position((windowWidth/2) - (width/2), (windowHeight/2) - (height/2));
 
 	// Scale
 	scale = width/1916; // 1916 is the regular width, where scale = exactly 1
@@ -125,7 +131,6 @@ function setup() {
 
 	// Player
 	player = new Sprite(width/2, height/2, 165, 85, 'dynamic');
-	player.image = (indicatorNone);
 	player.rotation = playerDirection;
 	player.direction = playerDirection;
 	player.scale = scale;
@@ -146,15 +151,15 @@ function setup() {
 	// Free Roam Exit Button
 	freeRoamExitButton = new Sprite(
 		WALL_THICKNESS + (TEXT_REMOVE_ZONE_X / 2) * scale, 
-		WALL_THICKNESS + (TEXT_REMOVE_ZONE_Y - (TEXT_REMOVE_ZONE_Y /4)) * scale, 
+		WALL_THICKNESS + ((TEXT_REMOVE_ZONE_Y / 2) + (TEXT_REMOVE_ZONE_Y / 4)) * scale, 
 		TEXT_REMOVE_ZONE_X, 
-		TEXT_REMOVE_ZONE_Y/2	, 
+		TEXT_REMOVE_ZONE_Y/2, 
 		'kinematic'
 	);
 	freeRoamExitButton.color = '#cc4444';
 	freeRoamExitButton.textSize = 30 * scale;
 	freeRoamExitButton.text = 'Exit Free Roam';
-	freeRoamExitButton.scale.x = scale;
+	freeRoamExitButton.scale = scale;
 	freeRoamExitButton.visible = false;
 
 	// Post Game Score
@@ -604,11 +609,17 @@ function startScreen() {
 		controlsButton.y = height/2 + (120 * scale)
 		controlsButton.text = 'View Controls';
 
+		if (INDICATOR_MODE == 'display') {
+			player.image = (indicatorNone);
+		} else {
+			player.image = (indicatorHigh);
+		}
+
 		userInterfaceGroup.visible = true;
 		userInterfaceGroup.collider = 'kinematic';
 		
 		scoreBox.visible = false;
-		scoreBox.scale.x = scale;
+		scoreBox.scale = scale;
 		scoreBox.text = '';
 		freeRoamExitButton.visible = false;
 		initialising = false;
@@ -640,7 +651,7 @@ function startScreen() {
 /*****************************************************************************************************/
 function endScreen() {
 	while (initialising == true) {
-		// Reset player position, rotation and speed
+		// Reset player position, rotation, speed and image
 		player.speed = 0;
 		movingInReverse = false;
 		player.x = width/2;
@@ -648,6 +659,13 @@ function endScreen() {
 		playerDirection = 270;
 		player.rotation = playerDirection;
 		player.direction = playerDirection;
+		changePlayerImageBoostModeTimer = 0;
+		changePlayerImageBoostMode = 'ready';
+		if (INDICATOR_MODE == 'display') {
+			player.image = (indicatorNone);
+		} else {
+			player.image = (indicatorHigh);
+		}
 
 		// Change position of start buttons 
 		timeTrialStartButton.y = height / 1.3 - (40 * scale);
@@ -707,9 +725,17 @@ function controlsScreen() {
 		userInterfaceGroup.collider = 'none';
 		
 		scoreBox.visible = true;
-		scoreBox.scale.x = 2 * scale;
+		scoreBox.scale.x = 2.5 * scale;
 		scoreBox.textSize = 30 * scale;
-		scoreBox.text = 'WASD or arrow keys to move and rotate player\nCollect all dust to win\nYour time will be recorded in time trial mode'
+
+		if (INDICATOR_MODE == 'boost') {
+			scoreBox.text = 'WASD or arrow keys to move and rotate player.\nCollect all dust to win.\nPress spacebar to boost your suction radius,\nyour battery will decline and then recharge over time.\nYour time will be recorded in time trial mode.'
+		}
+
+		if (INDICATOR_MODE == 'display') {
+			scoreBox.text = 'WASD or arrow keys to move and rotate player.\nCollect all dust to win.\nYour vacuum cleaner displays how much dust is left.\nYour time will be recorded in time trial mode.'
+		}
+		
 		initialising = false;
 	}
 
@@ -723,24 +749,60 @@ function controlsScreen() {
 // changePlayerImage()
 /*****************************************************************************************************/
 function changePlayerImage() {
-	/*if (INDICATOR_MODE == 'boost') {
+	if (INDICATOR_MODE == 'boost') {
 		if (kb.presses('space') && changePlayerImageBoostMode == 'ready') {
-			var changePlayerImageBoostMode = 'discharge';
-			var changePlayerImageBoostModeTimer = 3; // change
+			console.log('poressd')
 			moveRadius = MOVE_RADIUS_BOOST;
+			changePlayerImageBoostModeTimer = 3; // change
+			changePlayerImageBoostMode = 'discharge';
 		}
 
 		if (changePlayerImageBoostMode == 'discharge') {
 			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
 				changePlayerImageBoostModeTimer--;
-				player.image = (indicator4);
+				if (changePlayerImageBoostModeTimer == 2) {
+					player.image = (indicatorMedium);
+				}
+
+				if (changePlayerImageBoostModeTimer == 1) {
+					player.image = (indicatorLow);
+				}
+
+				if (changePlayerImageBoostModeTimer == 0) {
+					player.image = (indicatorNone);
+				}
 			}
 
 			if (changePlayerImageBoostModeTimer == 0) {
 				moveRadius = MOVE_RADIUS_NORMAL;
+				changePlayerImageBoostModeTimer = 9; // change
+				changePlayerImageBoostMode = 'charge';
+				
 			}
 		}
-	}*/
+
+		if (changePlayerImageBoostMode == 'charge') {
+			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
+				changePlayerImageBoostModeTimer--;
+				if (changePlayerImageBoostModeTimer == 6) {
+					player.image = (indicatorLow);
+				}
+
+				if (changePlayerImageBoostModeTimer == 3) {
+					player.image = (indicatorMedium);
+				}
+
+				if (changePlayerImageBoostModeTimer == 0) {
+					player.image = (indicatorHigh);
+				}
+			}
+
+			if (changePlayerImageBoostModeTimer == 0) {
+				moveRadius = MOVE_RADIUS_NORMAL;
+				changePlayerImageBoostMode = 'ready';
+			}
+		}
+	}
 
 	if (INDICATOR_MODE == 'display') {
 		if (dustLeft < DUST_TO_SPAWN * 0.25) {
