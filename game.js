@@ -35,6 +35,7 @@ var debugMode = true;
 var playerDirection = 270;
 var movingInReverse = false;
 var dustLeft = 0;
+var dustLeftTemporary = 0;
 var totalDustSucked = 0;
 var moveRadius = 55;
 var timer = 0;
@@ -64,10 +65,10 @@ var wallsGroup;
 // Loads assets before setup() is called
 /*****************************************************************************************************/
 function preload() {
-	indicatorHigh = loadImage('/assets/indicatorHigh.png');
-	indicatorMedium = loadImage('/assets/indicatorMedium.png');
-	indicatorLow = loadImage('/assets/indicatorLow.png');
-	indicatorNone = loadImage('/assets/indicatorNone.png');
+	indicatorHigh = loadImage('./assets/indicatorHigh.png');
+	indicatorMedium = loadImage('./assets/indicatorMedium.png');
+	indicatorLow = loadImage('./assets/indicatorLow.png');
+	indicatorNone = loadImage('./assets/indicatorNone.png');
 }
 
 
@@ -246,7 +247,7 @@ function handleInput() {
 		}
 	};
 	
-	// Update the player rotation
+	// Update the player rotation since player direction variable is independent to fix a visual bug
 	player.rotation = playerDirection;
 	player.direction = playerDirection;
 
@@ -273,8 +274,8 @@ function handleInput() {
 // Parameter 1: How many particles to create / add to the array
 // Called by timeTrial() and freeRoam()
 // Adds (parameter 1) pieces of dust with a random position and colour to the dustArray, then calls 
-// removeDust(), and if any dust is not visible it chooses a new random position for those pieces of 
-// dust, it continues doing that until all dust are visible
+// removeDust() and moveDust(), and if any dust is not visible it chooses a new random position for 
+// those pieces of dust, it continues doing that until all dust are visible
 /*****************************************************************************************************/
 function spawnDust(dustToSpawn) {
 	for (var i = 0; i < dustToSpawn; i++) {
@@ -286,10 +287,13 @@ function spawnDust(dustToSpawn) {
 		});
 	}
 
+	// Call these functions, which make colliding dust not visible
 	moveDust();
 	removeDust();
 	
+	// Checks if there is any dust not visible
 	while (calculateDustLeft() < DUST_TO_SPAWN) {
+		// Chooses a new posittion for non visible dust, then makes it visible
 		for (var i = 0; i < dustArray.length; i++) {
 			if (dustArray[i].visible == false) {
 				dustArray[i].xPos = random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET);
@@ -297,6 +301,7 @@ function spawnDust(dustToSpawn) {
 				dustArray[i].visible = true;
 			} 
 		}
+		// Call these functions again, to hide colliding dust, then runs the loop until no dust is left non visible
 		moveDust();
 		removeDust();
 	}
@@ -311,6 +316,7 @@ function spawnDust(dustToSpawn) {
 /*****************************************************************************************************/
 function drawDust() {
 	for (var i = 0; i < dustArray.length; i++) {
+		// Only draws dust that is visible
 		if (dustArray[i].visible == true) {
 			stroke(dustArray[i].color);
 			strokeWeight(DUST_SIZE * scale);
@@ -337,6 +343,7 @@ function drawDust() {
 // the spawnDust() function.
 /*****************************************************************************************************/
 function moveDust() {
+	// Finding the position of the point ahead of the player
 	var xPosDustMoveCircle = player.x + cos(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
 	var yPosDustMoveCircle = player.y + sin(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
 
@@ -349,12 +356,17 @@ function moveDust() {
 		stroke('black');
 	}
 
+	// Goes through the array to check if dust is in a circle around the point ahead of the player
 	for (var i = 0; i < dustArray.length; i++) {
 		if (((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((moveRadius * scale) ** 2)) {
+			// Changes the piece of dust's x and y position of the dust that is colliding with the circle around the point ahead of the player
+			// to the horizontal and vertical distance between the dust and the point ahead of the player divided by DUST_MOVEMENT_SPEED 
+			// divided by the direct distance between the point ahead of the player and the piece of dust that is colliding
 			dustArray[i].xPos = dustArray[i].xPos - ((dustArray[i].xPos - xPosDustMoveCircle) / DUST_MOVEMENT_SPEED / (Math.sqrt(((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2))));
 			dustArray[i].yPos = dustArray[i].yPos - ((dustArray[i].yPos - yPosDustMoveCircle) / DUST_MOVEMENT_SPEED / (Math.sqrt(((dustArray[i].yPos - yPosDustMoveCircle) ** 2) + ((dustArray[i].xPos - xPosDustMoveCircle) ** 2))));
 		}
 
+		// For spawn dust it makes it non visible imediately so it can be moved to a new location
 		if (initialising == true && ((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((moveRadius * scale) ** 2)) {
 			dustArray[i].visible = false;
 		}
@@ -374,6 +386,7 @@ function moveDust() {
 // parameter to false
 /*****************************************************************************************************/
 function removeDust() {
+	// Finding the position of the point ahead of the player
 	var xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
 	var yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
 
@@ -386,14 +399,21 @@ function removeDust() {
 		stroke('black');
 	}
 
+	// Goes through the array to check if dust is in a circle around the point ahead of the player
 	for (var i = 0; i < dustArray.length; i++) {
 		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < ((REMOVAL_RADIUS * scale) ** 2) && dustArray[i].visible == true) {
+			// If dust is colliding with the circle, set it to be not visible
 			dustArray[i].visible = false;
+
+			// if initialising is not true (in game) and a dust is set to not visible, 
+			// then increase this counter that is used in the freeroam mode to tell the player the total dust sucked up
 			if (initialising !== true) {
 				totalDustSucked = totalDustSucked + 1;
 			}
 		}
 
+		// Used for spawnDust(), if dust is colliding with the text box in the top left, 
+		// it is set to not visible which means it's relocated
 		if (initialising == true && 
 			dustArray[i].xPos < (TEXT_REMOVE_ZONE_X + WALL_DUST_SPAWNING_OFFSET) * scale && 
 			dustArray[i].yPos < (TEXT_REMOVE_ZONE_Y + WALL_DUST_SPAWNING_OFFSET) * scale
@@ -411,7 +431,9 @@ function removeDust() {
 // It outputs a variable called dustLeft and also returns the counter
 /*****************************************************************************************************/
 function calculateDustLeft() {
-	var dustLeftTemporary = 0;
+	dustLeftTemporary = 0;
+
+	// Goes through the array and if any dust is visible it increases the counter
 	for (var i = 0; i < dustArray.length; i++) {
 		if (dustArray[i].visible == true) {
 			dustLeftTemporary++;
@@ -430,8 +452,6 @@ function calculateDustLeft() {
 
 /*****************************************************************************************************/
 // displayText()
-// Parameter 1: pass 'both' to display a timer and the dust remaining, 
-// and anything else to display only the dust
 // Called by timeTrial() and freeRoam()
 // If there is more than 0 dust left, then it counts total time in seconds (timer) counts seconds up to 
 // 59 (timerSecs) before rolling over to minutes (timerMins). It displays timerSecs and timerMins on 
@@ -440,12 +460,14 @@ function calculateDustLeft() {
 function displayText() {
 	textBackground.textSize = 30 * scale;
 
+	// Timer
 	if (dustLeft !== 0 && frameCount % 60 == 0 && gameMode == 'timeTrial') {
 		timer++;
 		timerSecs = timer % 60;
 		timerMins = Math.trunc(timer / 60);
 	}
 
+	// Display text
 	if (gameMode == 'timeTrial') {
 		if (timerMins < 1) {
 			textBackground.text = "Dust Left: " + dustLeft + "\nTime: " + timerSecs + 's', 20, 40;
@@ -466,12 +488,16 @@ function displayText() {
 /*****************************************************************************************************/
 function updateScoreBoxText() {
 	scoreBox.textSize = 30 * scale;
+
+	// Gets the timer from local storage, converts it to an integer and if the local time is 
+	// less than the saved time it updates the saved time to be the local time.
 	if (parseInt(localStorage.getItem('bestTimeTimer')) > timer) {
 		localStorage.setItem('bestTimeMins', timerMins);
 		localStorage.setItem('bestTimeSecs', timerSecs);
 		localStorage.setItem('bestTimeTimer', timer);
 	}
 
+	// Displays the text in the box
 	if (parseInt(localStorage.getItem('bestTimeMins')) < 1) {
 		if (timerMins < 1) {
 			scoreBox.text = 
@@ -504,6 +530,8 @@ function updateScoreBoxText() {
 // This gamemode diplays the endscreen when every piece of dust is no longer visible.
 /*****************************************************************************************************/
 function timeTrial() {
+	// Similar to the setup() function, it's run only on the first time this function is called, 
+	// and used for things like reseting things when starting a new game
 	while (initialising == true) {
 		gameModePostGame = 'timeTrial';
 		totalDustSucked = 0;
