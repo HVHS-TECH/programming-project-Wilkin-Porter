@@ -259,6 +259,11 @@ function handleInput() {
 		movingInReverse = true;
 	};
 
+	if (kb.pressing('down') && kb.pressing('up')) {
+		player.speed = 0;
+		movingInReverse = false;
+	}
+
 	if (kb.released('up')) {    
 		player.speed = 0;
 	};
