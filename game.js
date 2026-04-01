@@ -9,9 +9,9 @@
 // Global Variables, Constants and Arrays
 /*****************************************************************************************************/
 
- // Set to 'boost' so the player can press spacebar to increase their suction radius temporarily
- // set to 'display' so the vacuum cleaner displays how much dust is left
- // Set to 'none' so the vacuum cleaner only shows full and doesn't change
+// Set to 'boost' so the player can press spacebar to increase their suction radius temporarily
+// set to 'display' so the vacuum cleaner displays how much dust is left
+// Set to 'none' so the vacuum cleaner only shows full and doesn't change
 const INDICATOR_MODE = 'boost';
 
 const PLAYER_MOVEMENT_SPEED = 4;
@@ -530,9 +530,9 @@ function updateScoreBoxText() {
 // This gamemode diplays the endscreen when every piece of dust is no longer visible.
 /*****************************************************************************************************/
 function timeTrial() {
-	// Similar to the setup() function, it's run only on the first time this function is called, 
-	// and used for things like reseting things when starting a new game
-	while (initialising == true) {
+	// Similar to the setup() function, it's run only on the first time this function is called, and
+	// used for things like reseting things like variables and visibilty when starting a new game
+	if (initialising == true) {
 		gameModePostGame = 'timeTrial';
 		totalDustSucked = 0;
 		player.rotation = playerDirection;
@@ -555,6 +555,7 @@ function timeTrial() {
 		initialising = false;
 	}
 
+	// Ran every frame, calls other functions
 	handleInput();
 	drawDust();
 	moveDust();
@@ -580,7 +581,7 @@ function timeTrial() {
 // no longer visible.
 /*****************************************************************************************************/
 function freeRoam() {
-	while (initialising == true) {
+	if (initialising == true) {
 		gameModePostGame = 'freeRoam';
 		totalDustSucked = 0;
 		player.rotation = playerDirection;
@@ -633,7 +634,7 @@ function freeRoam() {
 // the controls button, then starts each gamemode (or changes to the controls screen) respectively
 /*****************************************************************************************************/
 function startScreen() {
-	while (initialising == true) {
+	if (initialising == true) {
 		controlsButton.y = height/2 + (120 * scale)
 		controlsButton.text = 'View Controls';
 
@@ -678,7 +679,7 @@ function startScreen() {
 // similar to startScreen()
 /*****************************************************************************************************/
 function endScreen() {
-	while (initialising == true) {
+	if (initialising == true) {
 		// Reset player position, rotation, speed and image
 		player.speed = 0;
 		movingInReverse = false;
@@ -689,6 +690,7 @@ function endScreen() {
 		player.direction = playerDirection;
 		changePlayerImageBoostModeTimer = 0;
 		changePlayerImageBoostMode = 'ready';
+		moveRadius = MOVE_RADIUS_NORMAL;
 		if (INDICATOR_MODE == 'display') {
 			player.image = (indicatorNone);
 		} else {
