@@ -251,19 +251,20 @@ function handleInput() {
 	player.rotation = playerDirection;
 	player.direction = playerDirection;
 
-	if (kb.pressing('up')) {
-		player.speed = PLAYER_MOVEMENT_SPEED * scale;
-	};
-	if (kb.pressing('down')) {    
-		player.speed = -PLAYER_MOVEMENT_SPEED * scale;
-		movingInReverse = true;
-	};
-
 	if (kb.pressing('down') && kb.pressing('up')) {
 		player.speed = 0;
 		movingInReverse = false;
-	}
+	} else {
+		if (kb.pressing('up')) {
+			player.speed = PLAYER_MOVEMENT_SPEED * scale;
+		};
 
+		if (kb.pressing('down')) {    
+			player.speed = -PLAYER_MOVEMENT_SPEED * scale;
+			movingInReverse = true;
+		};
+	}
+	
 	if (kb.released('up')) {    
 		player.speed = 0;
 	};
