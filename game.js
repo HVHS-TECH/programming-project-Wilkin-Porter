@@ -31,33 +31,37 @@ const TEXT_REMOVE_ZONE_Y = 95;
 
 const dustArray = [];
 
-var debugMode = true;
-var playerDirection = 270;
-var movingInReverse = false;
-var dustLeft = 0;
-var dustLeftTemporary = 0;
-var totalDustSucked = 0;
-var moveRadius = 55;
-var timer = 0;
-var timerSecs = 0;
-var timerMins = 0;
-var gameMode = 'startScreen';
-var gameModePostGame = '';
-var initialising = true;
-var scale;
-var changePlayerImageBoostModeTimer;
-var changePlayerImageBoostMode = 'ready';
+let debugModeEnable = false;
+let playerDirection = 270;
+let movingInReverse = false;
+let dustLeft = 0;
+let totalDustSucked = 0;
+let moveRadius = 55;
+let timer = 0;
+let timerSecs = 0;
+let timerMins = 0;
+let gameMode = 'startScreen';
+let gameModePostGame = '';
+let initialising = true;
+let scale;
+let changePlayerImageBoostModeTimer;
+let changePlayerImageBoostMode = 'ready';
 
-var canvas;
-var player;
-var dustGroup;
-var textBackground;
-var freeRoamExitButton;
-var timeTrialStartButton;
-var freeRoamStartButton;
-var controlsButton;
-var userInterfaceGroup;
-var wallsGroup;
+let canvas;
+let player;
+let dustGroup;
+let textBackground;
+let freeRoamExitButton;
+let timeTrialStartButton;
+let freeRoamStartButton;
+let controlsButton;
+let userInterfaceGroup;
+let wallsGroup;
+
+let indicatorHigh;
+let indicatorMedium;
+let indicatorLow;
+let indicatorNone;
 
 
 /*****************************************************************************************************/
@@ -146,7 +150,7 @@ function setup() {
 		'kinematic'
 	);
 	textBackground.color = 'white';
-	textBackground.scale.x = scale;
+	textBackground.scale = scale;
 	textBackground.visible = false;
 
 	// Free Roam Exit Button
@@ -195,8 +199,10 @@ function draw() {
 	background('lightgrey'); 
 
 	// Debug
-	if (debugMode == true) {
+	if (debugModeEnable == true) {
 		p5play.renderStats = true;
+	} else {
+		p5play.renderStats = false;
 	}
 
 	if (gameMode == 'timeTrial') {
@@ -229,7 +235,8 @@ function draw() {
 /*****************************************************************************************************/
 // handleInput()
 // Called by timeTrial() and freeRoam()
-// Handles the keyboard inputs and changes the movement and rotation of the player sprite
+// Handles the keyboard inputs and changes the movement and rotation of the player sprite.
+// If both back and forward arrows or the w and s keys are pressed it stops movement.
 /*****************************************************************************************************/
 function handleInput() {
 	if (kb.pressing('left')) {
@@ -251,6 +258,7 @@ function handleInput() {
 	player.rotation = playerDirection;
 	player.direction = playerDirection;
 
+	// Checks if both forward and reverse keys are pressed at the same time, if not it moves on
 	if (kb.pressing('down') && kb.pressing('up')) {
 		player.speed = 0;
 		movingInReverse = false;
@@ -268,6 +276,7 @@ function handleInput() {
 	if (kb.released('up')) {    
 		player.speed = 0;
 	};
+
 	if (kb.released('down')) {    
 		player.speed = 0;
 		movingInReverse = false;
@@ -284,7 +293,7 @@ function handleInput() {
 // those pieces of dust, it continues doing that until all dust are visible
 /*****************************************************************************************************/
 function spawnDust(dustToSpawn) {
-	for (var i = 0; i < dustToSpawn; i++) {
+	for (let i = 0; i < dustToSpawn; i++) {
 		dustArray.push({
 			xPos: random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET), 
 			yPos: random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET), 
@@ -300,7 +309,7 @@ function spawnDust(dustToSpawn) {
 	// Checks if there is any dust not visible
 	while (calculateDustLeft() < DUST_TO_SPAWN) {
 		// Chooses a new posittion for non visible dust, then makes it visible
-		for (var i = 0; i < dustArray.length; i++) {
+		for (let i = 0; i < dustArray.length; i++) {
 			if (dustArray[i].visible == false) {
 				dustArray[i].xPos = random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET);
 				dustArray[i].yPos = random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET);
@@ -321,7 +330,7 @@ function spawnDust(dustToSpawn) {
 // dust's colour at it's x and y position
 /*****************************************************************************************************/
 function drawDust() {
-	for (var i = 0; i < dustArray.length; i++) {
+	for (let i = 0; i < dustArray.length; i++) {
 		// Only draws dust that is visible
 		if (dustArray[i].visible == true) {
 			stroke(dustArray[i].color);
@@ -350,11 +359,11 @@ function drawDust() {
 /*****************************************************************************************************/
 function moveDust() {
 	// Finding the position of the point ahead of the player
-	var xPosDustMoveCircle = player.x + cos(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
-	var yPosDustMoveCircle = player.y + sin(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
+	let xPosDustMoveCircle = player.x + cos(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
+	let yPosDustMoveCircle = player.y + sin(player.rotation) * MOVE_DISTANCE_FROM_PLAYER * scale;
 
 	// Debug
-	if (debugMode == true) {
+	if (debugModeEnable == true) {
 		noFill();
 		stroke('cyan');
 		circle(xPosDustMoveCircle, yPosDustMoveCircle, (moveRadius * 2) * scale); 
@@ -363,7 +372,7 @@ function moveDust() {
 	}
 
 	// Goes through the array to check if dust is in a circle around the point ahead of the player
-	for (var i = 0; i < dustArray.length; i++) {
+	for (let i = 0; i < dustArray.length; i++) {
 		if (((dustArray[i].xPos - xPosDustMoveCircle) ** 2) + ((dustArray[i].yPos - yPosDustMoveCircle) ** 2) < ((moveRadius * scale) ** 2)) {
 			// Changes the piece of dust's x and y position of the dust that is colliding with the circle around the point ahead of the player
 			// to the horizontal and vertical distance between the dust and the point ahead of the player divided by DUST_MOVEMENT_SPEED 
@@ -393,11 +402,11 @@ function moveDust() {
 /*****************************************************************************************************/
 function removeDust() {
 	// Finding the position of the point ahead of the player
-	var xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
-	var yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
+	let xPosDustRemovalCircle = player.x + cos(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
+	let yPosDustRemovalCircle = player.y + sin(player.rotation) * REMOVAL_DISTANCE_FROM_PLAYER * scale;
 
 	// Debug
-	if (debugMode == true) {
+	if (debugModeEnable == true) {
 		noFill();
 		stroke('purple');
 		circle(xPosDustRemovalCircle, yPosDustRemovalCircle, (REMOVAL_RADIUS * 2) * scale); 
@@ -406,7 +415,7 @@ function removeDust() {
 	}
 
 	// Goes through the array to check if dust is in a circle around the point ahead of the player
-	for (var i = 0; i < dustArray.length; i++) {
+	for (let i = 0; i < dustArray.length; i++) {
 		if (((dustArray[i].xPos - xPosDustRemovalCircle) ** 2) + ((dustArray[i].yPos - yPosDustRemovalCircle) ** 2) < ((REMOVAL_RADIUS * scale) ** 2) && dustArray[i].visible == true) {
 			// If dust is colliding with the circle, set it to be not visible
 			dustArray[i].visible = false;
@@ -437,10 +446,10 @@ function removeDust() {
 // It outputs a variable called dustLeft and also returns the counter
 /*****************************************************************************************************/
 function calculateDustLeft() {
-	dustLeftTemporary = 0;
+	let dustLeftTemporary = 0;
 
 	// Goes through the array and if any dust is visible it increases the counter
-	for (var i = 0; i < dustArray.length; i++) {
+	for (let i = 0; i < dustArray.length; i++) {
 		if (dustArray[i].visible == true) {
 			dustLeftTemporary++;
 		}
@@ -537,7 +546,7 @@ function updateScoreBoxText() {
 /*****************************************************************************************************/
 function timeTrial() {
 	// Similar to the setup() function, it's run only on the first time this function is called, and
-	// used for things like reseting things like variables and visibilty when starting a new game
+	// used for things like resetting variables and visibilty when starting a new game
 	if (initialising == true) {
 		gameModePostGame = 'timeTrial';
 		totalDustSucked = 0;
@@ -547,7 +556,7 @@ function timeTrial() {
 		spawnDust(DUST_TO_SPAWN);
 
 		textBackground.y = WALL_THICKNESS + ((TEXT_REMOVE_ZONE_Y / 2) * scale);
-		textBackground.scale.y = 1 * scale;
+		textBackground.height = TEXT_REMOVE_ZONE_Y * scale;
 			
 		// Visibility
 		player.visible = true;
@@ -571,6 +580,7 @@ function timeTrial() {
 	allSprites.draw();
 	displayText();
 
+	// Game end detection (no dust left)
 	if (dustLeft == 0) {
 		initialising = true;
 		gameMode = 'endScreen';
@@ -587,6 +597,8 @@ function timeTrial() {
 // no longer visible.
 /*****************************************************************************************************/
 function freeRoam() {
+	// Similar to the setup() function, it's run only on the first time this function is called, and
+	// used for things like resetting variables and visibilty when starting a new game
 	if (initialising == true) {
 		gameModePostGame = 'freeRoam';
 		totalDustSucked = 0;
@@ -596,7 +608,7 @@ function freeRoam() {
 		spawnDust(DUST_TO_SPAWN);
 
 		textBackground.y = WALL_THICKNESS + ((TEXT_REMOVE_ZONE_Y / 4) * scale);
-		textBackground.scale.y = 0.5 * scale;
+		textBackground.height = TEXT_REMOVE_ZONE_Y / 2 * scale;
 
 		// Visibility
 		player.visible = true;
@@ -611,6 +623,7 @@ function freeRoam() {
 		initialising = false;
 	}
 
+	// Ran every frame, calls other functions
 	handleInput();
 	drawDust();
 	moveDust();
@@ -620,11 +633,13 @@ function freeRoam() {
 	allSprites.draw();
 	displayText();
 
+	// Respawn dust
 	if (dustLeft == 0) {
 		dustArray.length = 0;
 		spawnDust(DUST_TO_SPAWN);
 	}
 
+	// Game end detection (exit button)
 	if (freeRoamExitButton.mouse.presses('left')) {
 		initialising = true;
 		gameMode = 'endScreen';
@@ -640,6 +655,8 @@ function freeRoam() {
 // the controls button, then starts each gamemode (or changes to the controls screen) respectively
 /*****************************************************************************************************/
 function startScreen() {
+	// Similar to the setup() function, it's run only on the first time this function is called, and
+	// used for things like resetting variables and visibilty when starting a new game
 	if (initialising == true) {
 		controlsButton.y = height/2 + (120 * scale)
 		controlsButton.text = 'View Controls';
@@ -654,12 +671,14 @@ function startScreen() {
 		userInterfaceGroup.collider = 'kinematic';
 		
 		scoreBox.visible = false;
-		scoreBox.scale = scale;
+		scoreBox.width = 350 * scale;
+		scoreBox.height = 200 * scale;
 		scoreBox.text = '';
 		freeRoamExitButton.visible = false;
 		initialising = false;
 	}
 
+	// Button presses
 	if (timeTrialStartButton.mouse.presses('left')) {
 		initialising = true;
 		gameMode = 'timeTrial';
@@ -685,6 +704,8 @@ function startScreen() {
 // similar to startScreen()
 /*****************************************************************************************************/
 function endScreen() {
+	// Similar to the setup() function, it's run only on the first time this function is called, and
+	// used for things like resetting variables and visibilty when starting a new game
 	if (initialising == true) {
 		// Reset player position, rotation, speed and image
 		player.speed = 0;
@@ -752,6 +773,8 @@ function endScreen() {
 // the game to the start screen
 /*****************************************************************************************************/
 function controlsScreen() {
+	// Similar to the setup() function, it's run only on the first time this function is called, and
+	// used for things like resetting variables and visibilty when starting a new game
 	while (initialising == true) {
 		controlsButton.visible = true;
 		controlsButton.y = height/2 + (240 * scale)
@@ -761,15 +784,21 @@ function controlsScreen() {
 		userInterfaceGroup.collider = 'none';
 		
 		scoreBox.visible = true;
-		scoreBox.scale.x = 2.5 * scale;
+		scoreBox.width = 350 * 4 * scale;
+		scoreBox.height = 200 * 1.8 * scale;
 		scoreBox.textSize = 30 * scale;
 
+		// Display different controls for different indicator modes
 		if (INDICATOR_MODE == 'boost') {
-			scoreBox.text = 'WASD or arrow keys to move and rotate player.\nCollect all dust to win.\nPress spacebar to boost your suction radius,\nyour battery will decline and then recharge over time.\nYour time will be recorded in time trial mode.'
+			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nPress spacebar to boost your suction radius, your battery will decline and then recharge over time.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
 		}
 
 		if (INDICATOR_MODE == 'display') {
-			scoreBox.text = 'WASD or arrow keys to move and rotate player.\nCollect all dust to win.\nYour vacuum cleaner displays how much dust is left.\nYour time will be recorded in time trial mode.'
+			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nYour vacuum cleaner displays how much dust is left.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
+		}
+
+		if (INDICATOR_MODE == 'none') {
+			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
 		}
 		
 		initialising = false;
@@ -783,19 +812,28 @@ function controlsScreen() {
 
 /*****************************************************************************************************/
 // changePlayerImage()
+// This changes what the battery on the vacuum cleaner does in all 3 modes, changed with INDICATOR_MODE
+// If set to boost, the player can press the spacebar to boost the vacuum radius for 3 seconds before
+// it must recharge for 9 seconds. While it is recharging it cannot be used again.
+// If set to display, it will display the dust left to vacuum going from low indicator to high.
+// If set to none, it will always be full.
 /*****************************************************************************************************/
 function changePlayerImage() {
+	// Boost mode
 	if (INDICATOR_MODE == 'boost') {
+		// Detect spacebar press
 		if (kb.presses('space') && changePlayerImageBoostMode == 'ready') {
-			console.log('poressd')
 			moveRadius = MOVE_RADIUS_BOOST;
-			changePlayerImageBoostModeTimer = 3; // change
+			changePlayerImageBoostModeTimer = 3;
 			changePlayerImageBoostMode = 'discharge';
 		}
 
+		// Boost radius and lower charge.
 		if (changePlayerImageBoostMode == 'discharge') {
 			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
 				changePlayerImageBoostModeTimer--;
+
+				// Change player image
 				if (changePlayerImageBoostModeTimer == 2) {
 					player.image = (indicatorMedium);
 				}
@@ -809,17 +847,21 @@ function changePlayerImage() {
 				}
 			}
 
+			// When timer runs out switch to charging
 			if (changePlayerImageBoostModeTimer == 0) {
 				moveRadius = MOVE_RADIUS_NORMAL;
-				changePlayerImageBoostModeTimer = 9; // change
+				changePlayerImageBoostModeTimer = 9;
 				changePlayerImageBoostMode = 'charge';
 				
 			}
 		}
 
+		// Return radius to regular size and increase charge. 
 		if (changePlayerImageBoostMode == 'charge') {
 			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
 				changePlayerImageBoostModeTimer--;
+
+				// Change player image
 				if (changePlayerImageBoostModeTimer == 6) {
 					player.image = (indicatorLow);
 				}
@@ -833,6 +875,7 @@ function changePlayerImage() {
 				}
 			}
 
+			// When timer runs out switch to ready state
 			if (changePlayerImageBoostModeTimer == 0) {
 				moveRadius = MOVE_RADIUS_NORMAL;
 				changePlayerImageBoostMode = 'ready';
@@ -840,7 +883,9 @@ function changePlayerImage() {
 		}
 	}
 
+	// Display mode
 	if (INDICATOR_MODE == 'display') {
+		// Change player image based on how much dust is left
 		if (dustLeft < DUST_TO_SPAWN * 0.25) {
 			player.image = (indicatorHigh);
 			return;
@@ -857,6 +902,7 @@ function changePlayerImage() {
 		}
 	}
 
+	// Always full
 	if (INDICATOR_MODE == 'none') {
 		player.image = (indicatorHigh);
 	}
