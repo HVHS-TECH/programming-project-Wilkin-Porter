@@ -898,15 +898,15 @@ function controlsScreen() {
 
 		// Display different controls for different indicator modes
 		if (indicatorMode == 'boost') {
-			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nPress spacebar to boost your suction radius, your battery will decline and then recharge over time.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
+			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nPress spacebar to boost your suction radius, your battery will decline and then recharge over time.\n\nIn time trial mode, vacuum all dust to win, your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
 		}
 
 		if (indicatorMode == 'display') {
-			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nYour vacuum cleaner displays how much dust is left.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
+			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nYour vacuum cleaner displays how much dust is left.\n\nIn time trial mode, vacuum all dust to win, your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
 		}
 
 		if (indicatorMode == 'none') {
-			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
+			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nIn time trial mode, vacuum all dust to win, your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
 		}
 		
 		initialising = false;
