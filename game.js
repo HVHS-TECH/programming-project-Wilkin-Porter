@@ -237,6 +237,45 @@ function draw() {
 
 
 /*****************************************************************************************************/
+// spawnDust()
+// Parameter 1: How many particles to create / add to the array
+// Called by timeTrial() and freeRoam()
+// Adds (parameter 1) pieces of dust with a random position and colour to the dustArray, then calls 
+// removeDust() and moveDust(), and if any dust is not visible it chooses a new random position for 
+// those pieces of dust, it continues doing that until all dust are visible
+/*****************************************************************************************************/
+function spawnDust(dustToSpawn) {
+	for (let i = 0; i < dustToSpawn; i++) {
+		dustArray.push({
+			xPos: random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET), 
+			yPos: random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET), 
+			color: random(['#633a0e', '#855624', '#2e1a05']),
+			visible: true
+		});
+	}
+
+	// Call these functions, which make colliding dust not visible
+	moveDust();
+	removeDust();
+	
+	// Checks if there is any dust not visible
+	while (calculateDustLeft() < DUST_TO_SPAWN) {
+		// Chooses a new posittion for non visible dust, then makes it visible
+		for (let i = 0; i < dustArray.length; i++) {
+			if (dustArray[i].visible == false) {
+				dustArray[i].xPos = random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET);
+				dustArray[i].yPos = random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET);
+				dustArray[i].visible = true;
+			} 
+		}
+		// Call these functions again, to hide colliding dust, then runs the loop until no dust is left non visible
+		moveDust();
+		removeDust();
+	}
+}
+
+
+/*****************************************************************************************************/
 // handleInput()
 // Called by timeTrial() and freeRoam()
 // Handles the keyboard inputs and changes the movement and rotation of the player sprite.
@@ -285,45 +324,6 @@ function handleInput() {
 		player.speed = 0;
 		movingInReverse = false;
 	};
-}
-
-
-/*****************************************************************************************************/
-// spawnDust()
-// Parameter 1: How many particles to create / add to the array
-// Called by timeTrial() and freeRoam()
-// Adds (parameter 1) pieces of dust with a random position and colour to the dustArray, then calls 
-// removeDust() and moveDust(), and if any dust is not visible it chooses a new random position for 
-// those pieces of dust, it continues doing that until all dust are visible
-/*****************************************************************************************************/
-function spawnDust(dustToSpawn) {
-	for (let i = 0; i < dustToSpawn; i++) {
-		dustArray.push({
-			xPos: random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET), 
-			yPos: random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET), 
-			color: random(['#633a0e', '#855624', '#2e1a05']),
-			visible: true
-		});
-	}
-
-	// Call these functions, which make colliding dust not visible
-	moveDust();
-	removeDust();
-	
-	// Checks if there is any dust not visible
-	while (calculateDustLeft() < DUST_TO_SPAWN) {
-		// Chooses a new posittion for non visible dust, then makes it visible
-		for (let i = 0; i < dustArray.length; i++) {
-			if (dustArray[i].visible == false) {
-				dustArray[i].xPos = random(WALL_DUST_SPAWNING_OFFSET, width-WALL_DUST_SPAWNING_OFFSET);
-				dustArray[i].yPos = random(WALL_DUST_SPAWNING_OFFSET, height-WALL_DUST_SPAWNING_OFFSET);
-				dustArray[i].visible = true;
-			} 
-		}
-		// Call these functions again, to hide colliding dust, then runs the loop until no dust is left non visible
-		moveDust();
-		removeDust();
-	}
 }
 
 
@@ -466,6 +466,110 @@ function calculateDustLeft() {
 	// Returns the amount of dust particles drawn for places where 
 	// this function isn't called before dustLeft is needed
 	return dustLeftTemporary;
+}
+
+
+/*****************************************************************************************************/
+// changePlayerImage()
+// This changes what the battery on the vacuum cleaner does in all 3 modes, changed with indicatorMode
+// If set to boost, the player can press the spacebar to boost the vacuum radius for 3 seconds before
+// it must recharge for 9 seconds. While it is recharging it cannot be used again.
+// If set to display, it will display the dust left to vacuum going from low indicator to high.
+// If set to none, it will always be full.
+/*****************************************************************************************************/
+function changePlayerImage() {
+	// Boost mode
+	if (indicatorMode == 'boost') {
+		// Detect spacebar press
+		if (kb.presses('space') && changePlayerImageBoostMode == 'ready') {
+			moveRadius = MOVE_RADIUS_BOOST;
+			changePlayerImageBoostModeTimer = 3;
+			changePlayerImageBoostMode = 'discharge';
+		}
+
+		// Boost radius and lower charge.
+		if (changePlayerImageBoostMode == 'discharge') {
+			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
+				changePlayerImageBoostModeTimer--;
+
+				// Change player image
+				if (changePlayerImageBoostModeTimer == 2) {
+					player.image = (indicatorMedium);
+				}
+
+				if (changePlayerImageBoostModeTimer == 1) {
+					player.image = (indicatorLow);
+				}
+
+				if (changePlayerImageBoostModeTimer == 0) {
+					player.image = (indicatorNone);
+				}
+			}
+
+			// When timer runs out switch to charging
+			if (changePlayerImageBoostModeTimer == 0) {
+				moveRadius = MOVE_RADIUS_NORMAL;
+				changePlayerImageBoostModeTimer = 9;
+				changePlayerImageBoostMode = 'charge';
+				
+			}
+		}
+
+		// Return radius to regular size and increase charge. 
+		if (changePlayerImageBoostMode == 'charge') {
+			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
+				changePlayerImageBoostModeTimer--;
+
+				// Change player image
+				if (changePlayerImageBoostModeTimer == 6) {
+					player.image = (indicatorLow);
+				}
+
+				if (changePlayerImageBoostModeTimer == 3) {
+					player.image = (indicatorMedium);
+				}
+
+				if (changePlayerImageBoostModeTimer == 0) {
+					player.image = (indicatorHigh);
+				}
+			}
+
+			// When timer runs out switch to ready state
+			if (changePlayerImageBoostModeTimer == 0) {
+				moveRadius = MOVE_RADIUS_NORMAL;
+				changePlayerImageBoostMode = 'ready';
+			}
+		}
+	}
+
+	// Display mode
+	if (indicatorMode == 'display') {
+		// Change player image based on how much dust is left
+		if (dustLeft < DUST_TO_SPAWN * 0.25) {
+			player.image = (indicatorHigh);
+			return;
+		}
+
+		if (dustLeft < DUST_TO_SPAWN * 0.5) {
+			player.image = (indicatorMedium);
+			return;
+		}
+
+		if (dustLeft < DUST_TO_SPAWN * 0.75) {
+			player.image = (indicatorLow);
+			return;
+		}
+
+		if (dustLeft < DUST_TO_SPAWN) {
+			player.image = (indicatorNone);
+			return;
+		}
+	}
+
+	// Always full
+	if (indicatorMode == 'none') {
+		player.image = (indicatorHigh);
+	}
 }
 
 
@@ -811,108 +915,5 @@ function controlsScreen() {
 	if (controlsButton.mouse.presses('left')) {
 		initialising = true;
 		gameMode = 'startScreen';
-	}
-}
-
-/*****************************************************************************************************/
-// changePlayerImage()
-// This changes what the battery on the vacuum cleaner does in all 3 modes, changed with indicatorMode
-// If set to boost, the player can press the spacebar to boost the vacuum radius for 3 seconds before
-// it must recharge for 9 seconds. While it is recharging it cannot be used again.
-// If set to display, it will display the dust left to vacuum going from low indicator to high.
-// If set to none, it will always be full.
-/*****************************************************************************************************/
-function changePlayerImage() {
-	// Boost mode
-	if (indicatorMode == 'boost') {
-		// Detect spacebar press
-		if (kb.presses('space') && changePlayerImageBoostMode == 'ready') {
-			moveRadius = MOVE_RADIUS_BOOST;
-			changePlayerImageBoostModeTimer = 3;
-			changePlayerImageBoostMode = 'discharge';
-		}
-
-		// Boost radius and lower charge.
-		if (changePlayerImageBoostMode == 'discharge') {
-			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
-				changePlayerImageBoostModeTimer--;
-
-				// Change player image
-				if (changePlayerImageBoostModeTimer == 2) {
-					player.image = (indicatorMedium);
-				}
-
-				if (changePlayerImageBoostModeTimer == 1) {
-					player.image = (indicatorLow);
-				}
-
-				if (changePlayerImageBoostModeTimer == 0) {
-					player.image = (indicatorNone);
-				}
-			}
-
-			// When timer runs out switch to charging
-			if (changePlayerImageBoostModeTimer == 0) {
-				moveRadius = MOVE_RADIUS_NORMAL;
-				changePlayerImageBoostModeTimer = 9;
-				changePlayerImageBoostMode = 'charge';
-				
-			}
-		}
-
-		// Return radius to regular size and increase charge. 
-		if (changePlayerImageBoostMode == 'charge') {
-			if (frameCount % 60 == 0 && changePlayerImageBoostModeTimer > 0) {
-				changePlayerImageBoostModeTimer--;
-
-				// Change player image
-				if (changePlayerImageBoostModeTimer == 6) {
-					player.image = (indicatorLow);
-				}
-
-				if (changePlayerImageBoostModeTimer == 3) {
-					player.image = (indicatorMedium);
-				}
-
-				if (changePlayerImageBoostModeTimer == 0) {
-					player.image = (indicatorHigh);
-				}
-			}
-
-			// When timer runs out switch to ready state
-			if (changePlayerImageBoostModeTimer == 0) {
-				moveRadius = MOVE_RADIUS_NORMAL;
-				changePlayerImageBoostMode = 'ready';
-			}
-		}
-	}
-
-	// Display mode
-	if (indicatorMode == 'display') {
-		// Change player image based on how much dust is left
-		if (dustLeft < DUST_TO_SPAWN * 0.25) {
-			player.image = (indicatorHigh);
-			return;
-		}
-
-		if (dustLeft < DUST_TO_SPAWN * 0.5) {
-			player.image = (indicatorMedium);
-			return;
-		}
-
-		if (dustLeft < DUST_TO_SPAWN * 0.75) {
-			player.image = (indicatorLow);
-			return;
-		}
-
-		if (dustLeft < DUST_TO_SPAWN) {
-			player.image = (indicatorNone);
-			return;
-		}
-	}
-
-	// Always full
-	if (indicatorMode == 'none') {
-		player.image = (indicatorHigh);
 	}
 }
