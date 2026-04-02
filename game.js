@@ -9,10 +9,15 @@
 // Global Variables, Constants and Arrays
 /*****************************************************************************************************/
 
+// This is a variable so it can be changed in the console, it could just as easily be a constant.
+// Set to 'true' to enable performance stats and removal zone visualisation
+let debugModeEnable = false;
+
+// This is a variable so it can be changed in the console, it could just as easily be a constant.
 // Set to 'boost' so the player can press spacebar to increase their suction radius temporarily
 // set to 'display' so the vacuum cleaner displays how much dust is left
 // Set to 'none' so the vacuum cleaner only shows full and doesn't change
-const INDICATOR_MODE = 'boost';
+let indicatorMode = 'boost';
 
 const PLAYER_MOVEMENT_SPEED = 4;
 const PLAYER_ROTATION_SPEED = 1.7;
@@ -31,7 +36,6 @@ const TEXT_REMOVE_ZONE_Y = 95;
 
 const dustArray = [];
 
-let debugModeEnable = false;
 let playerDirection = 270;
 let movingInReverse = false;
 let dustLeft = 0;
@@ -661,7 +665,7 @@ function startScreen() {
 		controlsButton.y = height/2 + (120 * scale)
 		controlsButton.text = 'View Controls';
 
-		if (INDICATOR_MODE == 'display') {
+		if (indicatorMode == 'display') {
 			player.image = (indicatorNone);
 		} else {
 			player.image = (indicatorHigh);
@@ -718,7 +722,7 @@ function endScreen() {
 		changePlayerImageBoostModeTimer = 0;
 		changePlayerImageBoostMode = 'ready';
 		moveRadius = MOVE_RADIUS_NORMAL;
-		if (INDICATOR_MODE == 'display') {
+		if (indicatorMode == 'display') {
 			player.image = (indicatorNone);
 		} else {
 			player.image = (indicatorHigh);
@@ -789,15 +793,15 @@ function controlsScreen() {
 		scoreBox.textSize = 30 * scale;
 
 		// Display different controls for different indicator modes
-		if (INDICATOR_MODE == 'boost') {
+		if (indicatorMode == 'boost') {
 			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nPress spacebar to boost your suction radius, your battery will decline and then recharge over time.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
 		}
 
-		if (INDICATOR_MODE == 'display') {
+		if (indicatorMode == 'display') {
 			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nYour vacuum cleaner displays how much dust is left.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
 		}
 
-		if (INDICATOR_MODE == 'none') {
+		if (indicatorMode == 'none') {
 			scoreBox.text = 'WASD or arrow keys to move and rotate player.\n\nIn time trial mode, vacuum all dust to win, Your time will be recorded.\nIn free roam, vacuum as much or a little dust as you like and click exit free roam to end the game.';
 		}
 		
@@ -812,7 +816,7 @@ function controlsScreen() {
 
 /*****************************************************************************************************/
 // changePlayerImage()
-// This changes what the battery on the vacuum cleaner does in all 3 modes, changed with INDICATOR_MODE
+// This changes what the battery on the vacuum cleaner does in all 3 modes, changed with indicatorMode
 // If set to boost, the player can press the spacebar to boost the vacuum radius for 3 seconds before
 // it must recharge for 9 seconds. While it is recharging it cannot be used again.
 // If set to display, it will display the dust left to vacuum going from low indicator to high.
@@ -820,7 +824,7 @@ function controlsScreen() {
 /*****************************************************************************************************/
 function changePlayerImage() {
 	// Boost mode
-	if (INDICATOR_MODE == 'boost') {
+	if (indicatorMode == 'boost') {
 		// Detect spacebar press
 		if (kb.presses('space') && changePlayerImageBoostMode == 'ready') {
 			moveRadius = MOVE_RADIUS_BOOST;
@@ -884,7 +888,7 @@ function changePlayerImage() {
 	}
 
 	// Display mode
-	if (INDICATOR_MODE == 'display') {
+	if (indicatorMode == 'display') {
 		// Change player image based on how much dust is left
 		if (dustLeft < DUST_TO_SPAWN * 0.25) {
 			player.image = (indicatorHigh);
@@ -900,10 +904,15 @@ function changePlayerImage() {
 			player.image = (indicatorLow);
 			return;
 		}
+
+		if (dustLeft < DUST_TO_SPAWN) {
+			player.image = (indicatorNone);
+			return;
+		}
 	}
 
 	// Always full
-	if (INDICATOR_MODE == 'none') {
+	if (indicatorMode == 'none') {
 		player.image = (indicatorHigh);
 	}
 }
